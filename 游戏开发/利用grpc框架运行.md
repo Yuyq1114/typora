@@ -5,7 +5,7 @@
 #### 示例 `.proto` 文件（`game.proto`）
 
 ```
-protobuf复制代码syntax = "proto3";
+syntax = "proto3";
 
 package game;
 
@@ -39,8 +39,6 @@ message ActionResponse {
 #### 生成 Go 代码
 
 ```
-sh
-复制代码
 protoc --go_out=. --go-grpc_out=. game.proto
 ```
 
@@ -57,7 +55,7 @@ protoc --go_out=. --go-grpc_out=. game.proto
 #### 示例 Go 服务实现
 
 ```
-go复制代码package main
+package main
 
 import (
     "context"
@@ -102,7 +100,7 @@ func main() {
 #### 示例 GDScript 客户端（假设已生成 GDScript 代码）
 
 ```
-gdscript复制代码extends Node
+extends Node
 
 var grpc_client
 
@@ -120,7 +118,7 @@ func _on_game_state_response(response):
 #### 示例 C# 客户端（假设已生成 C# 代码）
 
 ```
-csharp复制代码using Godot;
+using Godot;
 using Grpc.Core;
 using YourNamespace;
 

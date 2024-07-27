@@ -7,8 +7,6 @@
 确保你已经安装了 PyTorch。如果没有，可以通过以下命令安装：
 
 ```
-bash
-复制代码
 pip install torch torchvision
 ```
 
@@ -21,7 +19,7 @@ GAN 模型由两个主要组件组成：生成器（Generator）和判别器（D
 生成器负责从随机噪声中生成图像。以下是一个简单的生成器实现：
 
 ```
-python复制代码import torch
+import torch
 import torch.nn as nn
 
 class Generator(nn.Module):
@@ -47,7 +45,7 @@ class Generator(nn.Module):
 判别器负责判断图像是否真实或由生成器生成。以下是一个简单的判别器实现：
 
 ```
-python复制代码class Discriminator(nn.Module):
+class Discriminator(nn.Module):
     def __init__(self):
         super(Discriminator, self).__init__()
         self.model = nn.Sequential(
@@ -70,7 +68,7 @@ python复制代码class Discriminator(nn.Module):
 GAN 的训练过程包括交替优化生成器和判别器。以下是训练 GAN 的完整代码：
 
 ```
-python复制代码import torch
+import torch
 import torch.optim as optim
 from torchvision import transforms
 from torch.utils.data import DataLoader, Dataset
@@ -156,7 +154,7 @@ train_gan(generator, discriminator, dataloader)
 在训练完成后，可以使用生成器生成新的游戏关卡图像：
 
 ```
-python复制代码def generate_game_level(generator, num_samples=1):
+def generate_game_level(generator, num_samples=1):
     generator.eval()
     with torch.no_grad():
         noise = torch.randn(num_samples, 100)
