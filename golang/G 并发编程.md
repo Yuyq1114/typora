@@ -530,3 +530,47 @@ func main() {
     sem.Wait()
 }
 ```
+
+
+
+## 一个没有同步机制导致的读写不一致例子
+
+```
+package main
+
+import (
+	"fmt"
+	"time"
+)
+
+func A(a *int) {
+	*a = *a + 1
+	fmt.Println("A", *a)
+}
+
+func B(a *int) {
+	*a = *a + 2
+	fmt.Println("B", *a)
+}
+
+func C(a *int) {
+	*a = *a + 3
+	fmt.Println("C", *a)
+}
+
+func main() {
+	// num := rand.Intn(100)
+	num := 24
+	fmt.Println(num)
+
+	go A(&num)
+	go B(&num)
+	go C(&num)
+	time.Sleep(time.Second)
+
+	fmt.Println(num)
+}
+
+```
+
+这段代码得执行结果可能是24  ，A 25， C 30， B 27， 30

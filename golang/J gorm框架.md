@@ -5,7 +5,7 @@ GORM（Go Object Relational Mapping）是一个流行的Go语言 ORM（对象关
 首先，要使用GORM，需要配置数据库连接。GORM支持多种数据库，例如MySQL、PostgreSQL、SQLite等。以下是连接MySQL数据库的示例：
 
 ```
-go复制代码import (
+import (
     "gorm.io/driver/mysql"
     "gorm.io/gorm"
 )
@@ -22,7 +22,7 @@ if err != nil {
 在GORM中，模型是通过Go语言的结构体来定义的。每个模型对应数据库中的一张表，结构体的字段对应表中的列。可以使用标签（tags）来定义字段名、主键、外键等属性。
 
 ```
-go复制代码type User struct {
+type User struct {
     ID        uint   `gorm:"primaryKey"`
     Name      string
     Email     string
@@ -36,7 +36,7 @@ go复制代码type User struct {
 GORM提供了自动迁移（AutoMigrate）功能，可以根据模型自动创建或更新数据库表结构。
 
 ```
-go复制代码err := db.AutoMigrate(&User{})
+err := db.AutoMigrate(&User{})
 if err != nil {
     panic("failed to migrate database")
 }
@@ -47,7 +47,7 @@ if err != nil {
 使用 `Create` 方法创建新的记录：
 
 ```
-go复制代码user := User{Name: "Alice", Email: "alice@example.com"}
+user := User{Name: "Alice", Email: "alice@example.com"}
 result := db.Create(&user)
 if result.Error != nil {
     panic("failed to create user")
@@ -61,22 +61,20 @@ GORM提供了丰富的查询方法，支持链式调用和条件构造。以下�
 - 根据主键查询：
 
 ```
-go复制代码var user User
+var user User
 db.First(&user, 1) // 查询ID为1的用户
 ```
 
 - 条件查询：
 
 ```
-go复制代码var users []User
+var users []User
 db.Where("name = ?", "Alice").Find(&users) // 查询名为Alice的用户
 ```
 
 - 链式查询：
 
 ```
-go
-复制代码
 db.Where("name LIKE ?", "%A%").Order("created_at desc").Limit(10).Find(&users)
 ```
 
@@ -85,8 +83,6 @@ db.Where("name LIKE ?", "%A%").Order("created_at desc").Limit(10).Find(&users)
 使用 `Update` 方法更新记录：
 
 ```
-go
-复制代码
 db.Model(&user).Update("Name", "Alice Smith")
 ```
 
@@ -95,8 +91,6 @@ db.Model(&user).Update("Name", "Alice Smith")
 使用 `Delete` 方法删除记录：
 
 ```
-go
-复制代码
 db.Delete(&user)
 ```
 
@@ -109,7 +103,7 @@ GORM支持定义和处理模型之间的关联关系，如一对一、一对多�
 GORM允许在事务中执行多个操作，以确保操作的原子性和数据的一致性。
 
 ```
-go复制代码tx := db.Begin()
+tx := db.Begin()
 defer func() {
     if r := recover(); r != nil {
         tx.Rollback()
@@ -128,7 +122,7 @@ tx.Commit()
 通过注册回调函数，可以在模型的生命周期中的不同阶段执行特定的逻辑，如创建前、更新后等。
 
 ```
-go复制代码func (user *User) BeforeCreate(tx *gorm.DB) (err error) {
+func (user *User) BeforeCreate(tx *gorm.DB) (err error) {
     // 在创建前执行逻辑
     return
 }

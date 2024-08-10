@@ -368,3 +368,79 @@ func main() {
     fmt.Println(c()) // 输出：3
 }
 ```
+
+## 闭包
+
+### 闭包的基本概念
+
+在Go语言中，任何匿名函数都可以成为闭包。匿名函数是没有名字的函数，可以在函数内部定义，并可以捕获其外部函数中的变量。
+
+### 闭包的特性
+
+1. **捕获环境**：闭包可以捕获并保存其定义时所在环境的变量。
+2. **延长变量生命周期**：闭包可以延长局部变量的生命周期，确保在闭包被调用时这些变量依然存在。
+3. **状态保持**：闭包可以用来创建拥有内部状态的函数，这些状态可以在多次调用中保持。
+
+### 示例
+
+以下是一个简单的闭包示例：
+
+```
+package main
+
+import "fmt"
+
+func main() {
+    adder := createAdder(5)
+    fmt.Println(adder(2)) // 输出 7
+    fmt.Println(adder(10)) // 输出 15
+}
+
+func createAdder(x int) func(int) int {
+    return func(y int) int {
+        return x + y
+    }
+}
+```
+
+### 解释
+
+1. **`createAdder` 函数**：这个函数返回一个闭包。它接收一个整数参数 `x`，并返回一个匿名函数。匿名函数接收一个整数参数 `y`，并返回 `x` 和 `y` 的和。
+2. **捕获环境**：在 `createAdder` 函数返回的闭包中，`x` 是 `createAdder` 函数的参数。即使 `createAdder` 函数已经执行完毕，`x` 仍然会被闭包捕获并保存在闭包中。
+3. **使用闭包**：在 `main` 函数中，我们调用 `createAdder(5)` 得到一个闭包 `adder`。当我们调用 `adder(2)` 时，它会将 `5` 和 `2` 相加并返回 `7`。同理，调用 `adder(10)` 会返回 `15`。
+
+### 闭包在实际开发中的应用
+
+闭包在实际开发中非常有用，特别是在以下场景中：
+
+1. **回调函数**：闭包可以作为回调函数，捕获并保存执行上下文中的变量。
+2. **延迟计算**：闭包可以用来延迟计算，将计算逻辑和执行环境一起保存下来。
+3. **数据封装**：闭包可以用来封装数据和方法，形成更高级的抽象。
+
+### 示例：使用闭包实现一个简单的计数器
+
+```
+package main
+
+import "fmt"
+
+func main() {
+    counter := createCounter()
+    fmt.Println(counter()) // 输出 1
+    fmt.Println(counter()) // 输出 2
+    fmt.Println(counter()) // 输出 3
+}
+
+func createCounter() func() int {
+    count := 0
+    return func() int {
+        count++
+        return count
+    }
+}
+```
+
+### 解释
+
+1. **`createCounter` 函数**：这个函数返回一个闭包。闭包内部定义了一个局部变量 `count`，并返回一个匿名函数。每次调用匿名函数时，`count` 都会递增并返回。
+2. **状态保持**：闭包捕获并保存了 `count` 变量，因此每次调用 `counter` 函数时，`count` 的值会递增。

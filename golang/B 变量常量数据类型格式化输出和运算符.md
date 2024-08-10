@@ -460,3 +460,46 @@ func main() {
 - `%+v` 会包含字段名称的详细格式输出。
 - `%T` 用于输出变量的类型。
 
+# 六 格式化输入
+
+**`fmt.Scan`**: 用于从标准输入中读取数据，按空格分隔。读取的数据会被解析为对应的变量类型。
+
+```
+var name string
+var age int
+fmt.Scan(&name, &age)
+```
+
+**`fmt.Scanf`**: 允许使用格式化字符串来指定输入的格式。例如，如果你希望按特定格式读取数据，可以使用这个函数。在读取字符串时，`fmt.Scanf("%s", &name)` 和 `fmt.Scanf("%s", &message)` 使用 `%s` 格式化字符串，它会读取直到第一个空白字符（如空格、制表符或换行符）。这意味着如果用户在输入 `name` 后直接按下 `Enter` 键，`fmt.Scanf("%s", &message)` 可能会**跳过**，因为它还会读取到输入缓冲区中的换行符。
+
+```
+var name string
+var age int
+fmt.Scanf("%s %d", &name, &age)
+```
+
+**`fmt.Sscan`**: 用于从字符串中读取数据，与 `fmt.Scan` 类似，但它是从一个字符串而不是标准输入中读取。
+
+```
+var name string
+var age int
+input := "John 30"
+fmt.Sscan(input, &name, &age)
+```
+
+**`fmt.Sscanf`**: 用于从字符串中读取数据，并且可以使用格式化字符串来指定格式。
+
+```
+var name string
+var age int
+input := "John 30"
+fmt.Sscanf(input, "%s %d", &name, &age)
+```
+
+**`fmt.Scanln`**: 从标准输入中读取数据，直到遇到换行符。它可以用于读取一整行数据。
+
+```
+var line string
+fmt.Scanln(&line)
+```
+

@@ -40,6 +40,137 @@ gRPC（gRPC Remote Procedure Calls）是一个由Google开发的高性能、开�
 
 8. 客户端接受数据。
 
+
+
+## 编写proto文件
+
+### 基本语法
+
+1. **语法版本**
+
+   ```
+   syntax = "proto3";  // 或者 "proto2"
+   ```
+
+2. **包名**
+
+   ```
+   package mypackage;
+   ```
+
+3. **导入其他proto文件**
+
+   ```
+   import "other.proto";
+   ```
+
+4. ##### 可选的 生成.go文件和.pb.go文件的位置
+
+```
+option go_package = "proto/number";
+```
+
+###    **1.消息类型定义**
+
+消息类型是Proto文件的核心，用于定义数据结构。每个字段都有一个唯一的编号，用于标识字段数据。
+
+```
+message MyMessage {
+    int32 id = 1;          // 整数字段
+    string name = 2;       // 字符串字段
+    bool is_active = 3;    // 布尔字段
+    repeated string tags = 4; // 重复字段（数组）
+    NestedMessage nested = 5; // 嵌套消息
+}
+
+message NestedMessage {
+    string nested_field = 1;
+}
+```
+
+字段类型可以是以下几种：
+
+- `int32`, `int64`: 有符号整数
+- `uint32`, `uint64`: 无符号整数
+- `sint32`, `sint64`: 有符号整数（高效编码负数）
+- `bool`: 布尔值
+- `string`: 字符串
+- `bytes`: 二进制数据
+- 自定义消息类型
+
+### 2. 枚举类型定义
+
+枚举类型用于定义一组命名值。
+
+```
+enum MyEnum {
+    UNKNOWN = 0;
+    STARTED = 1;
+    IN_PROGRESS = 2;
+    COMPLETED = 3;
+}
+```
+
+枚举的每个值都需要有一个唯一的编号。默认值通常为0。
+
+### 3. 服务定义
+
+服务定义用于定义RPC服务及其方法。每个RPC方法定义了请求类型和响应类型。
+
+```
+service MyService {
+    rpc MyMethod (MyRequest) returns (MyResponse);
+}
+
+message MyRequest {
+    int32 id = 1;
+}
+
+message MyResponse {
+    string result = 1;
+}
+```
+
+RPC方法包含以下部分：
+
+- 方法名（如 `MyMethod`）
+- 请求消息类型（如 `MyRequest`）
+- 响应消息类型（如 `MyResponse`）
+
+
+
+## 生成两个文件
+
+### `number.pb.go`
+
+这个文件是通过 `protoc` 工具生成的，主要包含 Protocol Buffers 的消息类型定义。这个文件包括以下内容：
+
+包含 Protocol Buffers 的数据定义和处理逻辑。它定义了消息结构和序列化/反序列化方法。
+
+1. **消息定义**：
+   - 包含 `.proto` 文件中定义的消息类型。这些消息类型通常是用来描述数据结构的，比如请求和响应消息。
+2. **序列化和反序列化功能**：
+   - 包含用于序列化（将消息转换为二进制格式）和反序列化（将二进制数据转换回消息对象）的代码。
+3. **协议字段**：
+   - 定义了消息中的字段、字段类型以及字段的序号。
+
+
+
+### `number_grpc.pb.go`
+
+这个文件是通过 `protoc` 工具和 gRPC 插件生成的，包含 gRPC 服务的客户端和服务器端代码。这个文件包括以下内容：
+
+包含 gRPC 服务的客户端和服务器代码。它定义了服务接口和方法的实现，用于与 gRPC 服务进行通信。
+
+1. **服务定义**：
+   - 定义了 `.proto` 文件中声明的 gRPC 服务（例如，服务的接口、方法）。
+2. **客户端和服务器代码**：
+   - 包含客户端和服务器的代码生成，这些代码提供了与服务交互的函数和方法。
+3. **方法实现**：
+   - 包含用于调用 gRPC 服务方法的接口和相关实现代码。
+
+
+
 ### 使用场景
 
 - 微服务架构：gRPC非常适合微服务之间的高效通信。
@@ -47,6 +178,10 @@ gRPC（gRPC Remote Procedure Calls）是一个由Google开发的高性能、开�
 - 分布式系统：gRPC的流式通信和多路复用特性，适合分布式系统中的实时数据传输。
 
 ## go实现服务端客户端
+
+### 目录结构
+
+![](image/grpc.png)
 
 ### 环境准备
 
@@ -88,7 +223,7 @@ gRPC（gRPC Remote Procedure Calls）是一个由Google开发的高性能、开�
    
    package hello;
    
-   option go_package = "/";
+   option go_package = "protos/example";
    
    service HelloService {
        rpc SayHello (HelloRequest) returns (HelloResponse);
@@ -103,7 +238,7 @@ gRPC（gRPC Remote Procedure Calls）是一个由Google开发的高性能、开�
    }
    ```
 
-3. 在`grpc_example`目录下生成Go代码：
+3. 在`protoc/generate`目录下生成Go代码：
 
    ```
    protoc --go_out=. --go-grpc_out=. proto/hello.proto
@@ -121,6 +256,8 @@ gRPC（gRPC Remote Procedure Calls）是一个由Google开发的高性能、开�
 
 2. 在`main.go`中实现服务器：
 
+   **pb是给引用的包别名，pb结构应该”项目目录/proto目录/子目录（存放的生成的.go文件）“**
+
    ```
    package main
    
@@ -130,7 +267,7 @@ gRPC（gRPC Remote Procedure Calls）是一个由Google开发的高性能、开�
        "log"
        "net"
    
-       pb "grpc_example/proto"
+       pb "grpc_example/proto"// 
    
        "google.golang.org/grpc"
        "google.golang.org/grpc/reflection"

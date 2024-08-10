@@ -35,7 +35,8 @@
 - `var a func (int) int`   , `a:=func (b int) int {}`将函数作为参数传递
 - chan输出前未关闭chan会报错，deadlock！因为循环输出时无值会死锁 close（ch）
 - `wg.Wait()`有时候会在一个闭包内部，有时候在主携程
-- 
+- `fmt.Scanf` 跳过输入的原因通常与 `fmt.Scanf` 对输入的解析方式有关。特别是在读取字符串时，`fmt.Scanf("%s", &name)` 和 `fmt.Scanf("%s", &message)` 使用 `%s` 格式化字符串，它会读取直到第一个空白字符（如空格、制表符或换行符）。因为它还会读取到输入缓冲区中的换行符
+- go使用`github.com/confluentinc/confluent-kafka-go/v2/kafka`中的`kafka.NewProducer`是，一直显示未定义，这是由于go未开启`$env:CGO_ENABLED = "1"`，让go可以引用c的编译。且需要安装gcc编译器。
 
 
 
