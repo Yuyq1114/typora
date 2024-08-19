@@ -1265,3 +1265,89 @@ func main() {
 ```
 
 在这个示例中，日志记录器被配置为将日志信息输出到文件 `app.log`，并设置了日志前缀和标志。还创建了一个自定义的错误日志记录器，用于记录错误信息。
+
+## errgroup
+
+`errgroup` 是 Go 的一个标准库扩展包，位于 `golang.org/x/sync/errgroup` 中，主要用于处理一组并发任务并收集其中的第一个错误。它简化了并发任务的管理，尤其是当多个 goroutine 需要同步地处理任务且其中任何一个任务失败时，都需要取消剩余任务的情况。
+
+### 核心特性
+
+- **错误传播**: `errgroup` 能够捕获并返回并发任务中最早发生的错误。
+- **任务取消**: 任务一旦出现错误，`errgroup` 会自动取消其余未完成的任务。
+- **同步等待**: 使用 `errgroup.Wait()` 方法等待所有任务完成或某个任务失败。
+
+### 安装
+
+`errgroup` 属于 Go 扩展包，首先需要安装：
+
+```
+go get golang.org/x/sync/errgroup
+```
+
+### 使用方法
+
+1. **`errgroup.Group`**: 主要的结构体，负责管理多个并发任务。
+2. **`Go(func() error)`**: 启动一个 goroutine，函数返回一个错误，如果出现错误将被 `errgroup` 捕获。
+3. **`Wait()`**: 等待所有 goroutine 完成，如果任何一个 goroutine 返回错误，`Wait()` 会返回该错误。
+
+### 示例
+
+以下是一个简单的示例，展示如何使用 `errgroup` 来管理多个并发任务，并在其中某个任务失败时取消所有任务：
+
+```
+go复制代码package main
+
+import (
+    "context"
+    "errors"
+    "fmt"
+    "golang.org/x/sync/errgroup"
+    "time"
+)
+
+func main() {
+    // 创建 context 和 errgroup
+    ctx := context.Background()
+    g, ctx := errgroup.WithContext(ctx)
+
+    // 启动多个并发任务
+    g.Go(func() error {
+        time.Sleep(2 * time.Second)
+        return nil // 成功
+    })
+
+    g.Go(func() error {
+        time.Sleep(1 * time.Second)
+        return errors.New("task 2 failed") // 返回错误
+    })
+
+    g.Go(func() error {
+        <-ctx.Done() // 检查 context 是否被取消
+        return ctx.Err()
+    })
+
+    // 等待所有任务完成
+    if err := g.Wait(); err != nil {
+        fmt.Println("Error:", err)
+    } else {
+        fmt.Println("All tasks completed successfully")
+    }
+}
+```
+
+### 解读
+
+- `errgroup.WithContext(ctx)`：创建了一个 `errgroup.Group` 和关联的上下文 `ctx`，如果其中一个任务失败，其他正在执行的任务会通过上下文感知到取消信号。
+- `g.Go(func() error)`：启动多个 goroutine 并处理错误。
+- `ctx.Done()`：如果某个 goroutine 返回了错误，其余任务会在 `ctx.Done()` 中收到取消信号并停止执行。
+- `g.Wait()`：等待所有任务完成，并返回第一个遇到的错误。
+
+### 典型应用场景
+
+- **批量请求**: 处理多个 HTTP 请求或数据库查询，并在任何一个请求失败时终止所有请求。
+- **并发任务控制**: 需要处理多个并发任务，并确保所有任务成功完成或者某个任务失败后可以立刻停止其他任务。
+
+### 优势
+
+- **简洁性**: 简化了 goroutine 的错误处理和同步控制。
+- **自动取消**: 任务失败后自动取消其他任务，避免不必要的资源消耗。

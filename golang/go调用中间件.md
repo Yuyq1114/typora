@@ -126,6 +126,113 @@ https://github.com/niXman/mingw-builds-binaries/releases
 
 **开启：** `$env:CGO_ENABLED = "1"`，让go可以引用c的编译。，否则可能一直找不到库
 
+## **配置参数kafka.ConfigMap**
+
+```
+"bootstrap.servers":
+描述: 用逗号分隔的 Kafka broker 列表，客户端会连接这些 brokers 来发现整个 Kafka 集群。
+示例: "localhost:9092,broker2:9092"
+
+"client.id":
+描述: 客户端标识符，用于识别客户端。通常用于调试和日志记录。
+示例: "my-producer"
+
+"security.protocol":
+描述: 用于指定客户端与 broker 之间通信的协议。常用的协议有 plaintext, ssl, sasl_plaintext, sasl_ssl。
+示例: "plaintext"
+
+"acks" (生产者专用):
+描述: 指定生产者在接收到 broker 的确认之前，等待的确认数量。"0" 表示不等待确认，"1" 表示等待 leader 确认，"all" 表示等待所有 ISR（同步副本）的确认。
+示例: "all"
+
+"enable.idempotence" (生产者专用):
+描述: 启用幂等性，以防止重复的消息发送。启用此功能会强制 acks=all。
+示例: "true"
+
+"group.id" (消费者专用):
+描述: 消费者组的唯一标识符，消费者组中的所有消费者将协同工作来消费主题中的消息。
+示例: "my-consumer-group"
+
+"auto.offset.reset" (消费者专用):
+描述: 当消费者没有偏移量或偏移量不可用时，自动重置偏移量的位置。可选值有 "earliest"（从最早的可用偏移量开始消费）和 "latest"（从最新的偏移量开始消费）。
+示例: "earliest"
+
+"enable.auto.commit" (消费者专用):
+描述: 是否自动提交消费的偏移量。如果设为 false，则需要手动提交偏移量。
+示例: "true"
+
+"fetch.min.bytes" (消费者专用):
+描述: Broker 在返回消息集之前必须积累的最小字节数。增加这个值可以减少消费者从 broker 获取数据的请求频率。
+示例: "1"
+
+"session.timeout.ms" (消费者专用):
+描述: 如果在此时间间隔内没有收到消费者心跳，则认为消费者已死亡，消费者将从消费者组中移除。
+示例: "10000"
+
+"heartbeat.interval.ms" (消费者专用):
+描述: 向消费者组协调器发送心跳的间隔时间，用于维持与消费者组的连接。
+示例: "3000"
+
+"metadata.max.age.ms":
+描述: 客户端定期更新其缓存的 broker 和主题元数据的最大时间间隔。
+示例: "300000"
+
+"retries" (生产者专用):
+描述: 如果发送失败，生产者将重试的次数。设置为 0 表示不重试。
+示例: "5"
+
+"request.timeout.ms":
+描述: 请求响应的超时时间。如果 broker 在此时间内没有响应，客户端将认为请求失败。
+示例: "30000"
+
+"compression.type" (生产者专用):
+描述: 消息的压缩类型。可选值有 "none", "gzip", "snappy", "lz4", "zstd"。
+示例: "gzip"
+
+进阶配置字段
+"message.max.bytes":
+描述: 生产者发送的单条消息的最大大小（字节）。必须小于 broker 配置的 message.max.bytes 值。
+示例: "1048576" (1 MB)
+
+"max.poll.records" (消费者专用):
+描述: 每次调用 poll() 方法时返回的最大记录数。
+示例: "500"
+
+"max.in.flight.requests.per.connection" (生产者专用):
+描述: 每个连接未完成的请求的最大数量。设置较低的值可以限制重试的最大消息数。
+示例: "1"
+
+"linger.ms" (生产者专用):
+描述: 生产者将等待 linger.ms 时间以便更多的消息被发送，增加这个值可以增加吞吐量，但会增加延迟。
+示例: "5"
+
+"socket.keepalive.enable":
+描述: 启用 TCP keepalive 心跳，用于检测死连接。
+示例: "true"
+
+"sasl.mechanisms":
+描述: 使用 SASL 身份验证时所用的机制。常见的机制包括 "PLAIN", "SCRAM-SHA-256", "SCRAM-SHA-512"。
+示例: "PLAIN"
+
+"sasl.username" & "sasl.password":
+描述: 使用 SASL 认证时的用户名和密码。
+示例: "username", "password"
+
+"ssl.ca.location":
+描述: 用于 SSL 验证的 CA 证书路径。
+示例: "/path/to/ca.pem"
+
+"ssl.certificate.location":
+描述: 客户端的 SSL 证书路径。
+示例: "/path/to/client.pem"
+
+"ssl.key.location":
+描述: 客户端的 SSL 私钥路径。
+示例: "/path/to/key.pem"
+```
+
+## 示例
+
 ```
 package main
 
@@ -656,6 +763,124 @@ func main() {
 }
 
 ```
+
+### 原生postgresql库
+
+```
+package main
+
+import (
+	"database/sql"
+	"fmt"
+	"log"
+
+	_ "github.com/lib/pq"
+)
+
+func main() {
+	// 连接到 PostgreSQL 数据库
+	connStr := "user=postgres password=password dbname=mydb sslmode=disable"
+	db, err := sql.Open("postgres", connStr)
+	if err != nil {
+		log.Fatalf("连接数据库失败: %v", err)
+	}
+	defer db.Close()
+
+	// 创建数据库表
+	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS usersORM (
+		id SERIAL PRIMARY KEY,
+		name VARCHAR(100) NOT NULL,
+		email VARCHAR(100) NOT NULL UNIQUE,
+		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+	)`)
+	if err != nil {
+		log.Fatalf("创建表失败: %v", err)
+	}
+
+	// 插入数据
+	_, err = db.Exec(`INSERT INTO usersORM (name, email) VALUES ($1, $2)`, "Alice", "alice@example.com")
+	if err != nil {
+		log.Fatalf("插入数据失败: %v", err)
+	}
+
+	// 预处理语句插入数据
+	stmt, err := db.Prepare(`INSERT INTO usersORM (name, email) VALUES ($1, $2)`)
+	if err != nil {
+		log.Fatalf("准备语句失败: %v", err)
+	}
+	defer stmt.Close()
+
+	_, err = stmt.Exec("Bob", "bob@example.com")
+	if err != nil {
+		log.Fatalf("执行预处理语句失败: %v", err)
+	}
+
+	// 查询数据
+	rows, err := db.Query(`SELECT id, name, email, created_at FROM usersORM`)
+	if err != nil {
+		log.Fatalf("查询数据失败: %v", err)
+	}
+	defer rows.Close()
+
+	fmt.Println("查询到的用户:")
+	for rows.Next() {
+		var id int
+		var name, email string
+		var createdAt string
+		err = rows.Scan(&id, &name, &email, &createdAt)
+		if err != nil {
+			log.Fatalf("扫描行数据失败: %v", err)
+		}
+		fmt.Printf("ID: %d, Name: %s, Email: %s, CreatedAt: %s\n", id, name, email, createdAt)
+	}
+
+	// 更新数据
+	_, err = db.Exec(`UPDATE usersORM SET email = $1 WHERE name = $2`, "newalice@example.com", "Alice")
+	if err != nil {
+		log.Fatalf("更新数据失败: %v", err)
+	}
+
+	// 删除数据
+	_, err = db.Exec(`DELETE FROM usersORM WHERE name = $1`, "Bob")
+	if err != nil {
+		log.Fatalf("删除数据失败: %v", err)
+	}
+
+	// 事务处理
+	tx, err := db.Begin()
+	if err != nil {
+		log.Fatalf("开始事务失败: %v", err)
+	}
+
+	_, err = tx.Exec(`INSERT INTO usersORM (name, email) VALUES ($1, $2)`, "Charlie", "charlie@example.com")
+	if err != nil {
+		tx.Rollback()
+		log.Fatalf("事务插入失败: %v", err)
+	}
+
+	_, err = tx.Exec(`UPDATE usersORM SET email = $1 WHERE name = $2`, "newcharlie@example.com", "Charlie")
+	if err != nil {
+		tx.Rollback()
+		log.Fatalf("事务更新失败: %v", err)
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		log.Fatalf("提交事务失败: %v", err)
+	}
+
+	// 使用查询单行数据的方法
+	var email string
+	err = db.QueryRow(`SELECT email FROM usersORM WHERE name = $1`, "Charlie").Scan(&email)
+	if err != nil {
+		log.Fatalf("查询单行数据失败: %v", err)
+	}
+	fmt.Printf("查询到的 Charlie 的邮箱: %s\n", email)
+}
+
+```
+
+
 
 # doris
 

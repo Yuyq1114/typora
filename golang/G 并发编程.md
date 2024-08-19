@@ -574,3 +574,185 @@ func main() {
 ```
 
 这段代码得执行结果可能是24  ，A 25， C 30， B 27， 30
+
+## 一段并发的尝试
+
+### 客户端例子
+
+```
+package main
+
+import (
+	"bufio"
+	"fmt"
+	"math/rand"
+	"net"
+	"strconv"
+	"sync"
+	"sync/atomic"
+)
+
+var nums int64
+
+func sendNumber(wg *sync.WaitGroup, id int) {
+	defer wg.Done()
+
+	// 随机生成一个数
+	number := rand.Intn(100)
+
+	// 连接到服务器
+	conn, err := net.Dial("tcp", "localhost:8080")
+	if err != nil {
+		// fmt.Printf("客户端 %d: 连接服务器失败: %v\n", id, err)
+		return
+	}
+	defer conn.Close()
+
+	// 发送数字到服务器
+	// fmt.Printf("客户端 %d: 发送到服务器的数字：%d\n", id, number)
+	conn.Write([]byte(fmt.Sprintf("%d\n", number)))
+
+	// 接收服务器返回的消息
+	message, err := bufio.NewReader(conn).ReadString('\n')
+	if err == nil {
+		atomic.AddInt64(&nums, 1)
+	}
+	newNumber, _ := strconv.Atoi(message[:len(message)-1])
+	fmt.Printf("客户端 %d: 从服务器接收到的数字：%d\n", id, newNumber)
+}
+
+func main() {
+	// 设置并发客户端数量
+	clientCount := 280
+	var wg sync.WaitGroup
+
+	for i := 0; i < clientCount; i++ {
+		wg.Add(1)
+		go sendNumber(&wg, i)
+	}
+
+	// 等待所有客户端完成
+	wg.Wait()
+	fmt.Println("所有客户端请求已完成", atomic.LoadInt64(&nums))
+}
+
+```
+
+### 简单的服务器
+
+```
+package main
+
+import (
+	"bufio"
+	"fmt"
+	"net"
+	"strconv"
+)
+
+func handleConnection(conn net.Conn) {
+	defer conn.Close()
+	reader := bufio.NewReader(conn)
+
+	// 从客户端读取消息
+	message, _ := reader.ReadString('\n')
+	// fmt.Println("接收到客户端发送的数字：", message)
+
+	// 将字符串转换为整数
+	number, err := strconv.Atoi(message[:len(message)-1])
+	if err != nil {
+		fmt.Println("转换错误：", err)
+		return
+	}
+
+	// 数字加 1
+	number++
+
+	// 返回加 1 后的数字给客户端
+	conn.Write([]byte(fmt.Sprintf("%d\n", number)))
+	// fmt.Println("发送给客户端的数字：", number)
+}
+
+func main() {
+	// 监听端口
+	ln, err := net.Listen("tcp", ":8080")
+	if err != nil {
+		fmt.Println("监听端口错误:", err)
+		return
+	}
+	defer ln.Close()
+	fmt.Println("服务器已启动，正在等待连接...")
+
+	for {
+		conn, err := ln.Accept()
+		if err != nil {
+			fmt.Println("接受连接错误:", err)
+			continue
+		}
+		// 处理客户端连接
+		handleConnection(conn)
+	}
+}
+
+```
+
+210
+
+### 使用协程
+
+```
+// 处理客户端连接
+go handleConnection(conn)
+```
+
+260
+
+### 使用协程池
+
+```
+package main
+
+import (
+	"fmt"
+	"net/http"
+	"time"
+
+	"github.com/panjf2000/ants/v2"
+)
+
+// 处理请求的任务函数
+func task(w http.ResponseWriter) {
+	// 模拟一些工作负载
+	time.Sleep(100 * time.Millisecond)
+
+	// 输出已完成的请求次数到客户端
+	fmt.Fprintf(w, "Request number: \n")
+
+}
+
+func handler(w http.ResponseWriter, r *http.Request) {
+	// 提交任务到 Goroutine 池
+	err := ants.Submit(func() {
+		task(w)
+	})
+
+	if err != nil {
+		http.Error(w, "Server overloaded", http.StatusInternalServerError)
+	}
+}
+
+func main() {
+	// 创建一个 Goroutine 池，最大 Goroutine 数为 10000
+	p, _ := ants.NewPool(10000)
+	defer p.Release()
+
+	// 设置路由和处理函数
+	http.HandleFunc("/", handler)
+
+	// 启动 HTTP 服务器
+	fmt.Println("Starting server on :8080...")
+	http.ListenAndServe(":8080", nil)
+}
+
+```
+

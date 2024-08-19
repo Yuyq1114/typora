@@ -545,4 +545,6 @@ bin/kafka-log-dirs.sh --describe --bootstrap-server <broker_list> --topics <topi
 
 ## 网址信息
 
-https://kafka.apache.org/quickstart
+**kafka官网**https://kafka.apache.org/quickstart
+
+**很好的博客**https://www.cnblogs.com/huangdh/p/16886327.html
