@@ -1140,7 +1140,7 @@ go get golang.org/x/sync/errgroup
 以下是一个简单的示例，展示如何使用 `errgroup` 来管理多个并发任务，并在其中某个任务失败时取消所有任务：
 
 ```
-go复制代码package main
+package main
 
 import (
     "context"
@@ -1196,3 +1196,167 @@ func main() {
 
 - **简洁性**: 简化了 goroutine 的错误处理和同步控制。
 - **自动取消**: 任务失败后自动取消其他任务，避免不必要的资源消耗。
+
+## testing
+
+### 1. 定义一个简单的模型
+
+假设我们有一个 `User` 模型，并且有一些方法对该模型进行操作。
+
+```
+// user.go
+package model
+
+type User struct {
+    Name  string
+    Age   int
+    Email string
+}
+
+// IsAdult 方法判断用户是否成年
+func (u *User) IsAdult() bool {
+    return u.Age >= 18
+}
+
+// UpdateEmail 更新用户的邮箱
+func (u *User) UpdateEmail(newEmail string) {
+    u.Email = newEmail
+}
+```
+
+### 2. 编写测试代码
+
+接下来，我们为这个 `User` 模型编写单元测试。测试文件通常以 `_test.go` 结尾，以下是测试代码：
+
+```
+// user_test.go
+package model
+
+import (
+    "testing"
+)
+
+// 测试 IsAdult 方法
+func TestIsAdult(t *testing.T) {
+    user := User{Name: "Alice", Age: 20, Email: "alice@example.com"}
+    
+    if !user.IsAdult() {
+        t.Errorf("Expected %s to be an adult, but got not adult", user.Name)
+    }
+
+    user2 := User{Name: "Bob", Age: 16, Email: "bob@example.com"}
+    
+    if user2.IsAdult() {
+        t.Errorf("Expected %s to be a child, but got adult", user2.Name)
+    }
+}
+
+// 测试 UpdateEmail 方法
+func TestUpdateEmail(t *testing.T) {
+    user := User{Name: "Alice", Age: 20, Email: "alice@example.com"}
+    newEmail := "newalice@example.com"
+    
+    user.UpdateEmail(newEmail)
+    
+    if user.Email != newEmail {
+        t.Errorf("Expected email to be updated to %s, but got %s", newEmail, user.Email)
+    }
+}
+```
+
+### 3. 运行测试
+
+使用 `go test` 来运行测试。
+
+```
+go test -v
+```
+
+## 压力测试
+
+Go 的 `testing` 包提供了基准测试功能，可以用于测量函数在特定条件下的性能表现。尽管基准测试主要用于性能评估，但也可以用于简单的压力测试场景。
+
+Go 语言推荐测试文件和源代码文件放在一块，测试文件以 `_test.go` 结尾。比如，当前 package 有 `calc.go` 一个文件，我们想测试 `calc.go` 中的 `Add` 和 `Mul` 函数，那么应该新建 `calc_test.go` 作为测试文件。
+
+- 测试用例名称一般命名为 `Test` 加上待测试的方法名。
+- 测试用的参数有且只有一个，在这里是 `t *testing.T`。
+- 基准测试(benchmark)的参数是 `*testing.B`，TestMain 的参数是 `*testing.M` 类型。
+- `go test -v`，`-v` 参数会显示每个用例的测试结果，另外 `-cover` 参数可以查看覆盖率。
+
+### 示例：基准测试一个处理函数
+
+假设我们有一个简单的 HTTP 服务器，提供一个处理请求的函数 `HandleRequest`。我们希望通过基准测试来评估其在高并发情况下的性能。
+
+#### 1. 定义处理函数
+
+```
+// server.go
+package main
+
+import (
+    "fmt"
+    "net/http"
+)
+
+func HandleRequest(w http.ResponseWriter, r *http.Request) {
+    // 模拟处理逻辑
+    fmt.Fprintf(w, "Hello, World!")
+}
+
+func main() {
+    http.HandleFunc("/", HandleRequest)
+    http.ListenAndServe(":8080", nil)
+}
+```
+
+#### 2. 编写基准测试
+
+```
+// server_test.go
+package main
+
+import (
+    "net/http"
+    "net/http/httptest"
+    "testing"
+)
+
+func BenchmarkHandleRequest(b *testing.B) {
+    req, err := http.NewRequest("GET", "/", nil)
+    if err != nil {
+        b.Fatal(err)
+    }
+
+    rr := httptest.NewRecorder()
+    handler := http.HandlerFunc(HandleRequest)
+
+    b.ResetTimer()
+    for i := 0; i < b.N; i++ {
+        handler.ServeHTTP(rr, req)
+    }
+}
+```
+
+#### 3. 运行基准测试
+
+在终端中运行以下命令：
+
+```
+go test -bench=.
+```
+
+#### 4. 解释结果
+
+基准测试会输出类似以下的结果：
+
+```
+goos: darwin
+goarch: amd64
+BenchmarkHandleRequest-8   	10000000	       200 ns/op
+PASS
+ok  	path/to/your/package	2.345s
+```
+
+- **BenchmarkHandleRequest-8**：表示在 8 个 CPU 核心上运行的基准测试。
+- **10000000**：表示函数被调用的次数。
+- **200 ns/op**：每次操作的平均耗时。
