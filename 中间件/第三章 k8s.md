@@ -1,3 +1,5 @@
+![](D:\ProgramFile\typora\中间件\image\k8s_architecture.png)
+
 ## 基本概念
 
 ### 1. 集群（Cluster）
@@ -41,6 +43,216 @@
 ### 8. 存储卷（Volume）
 
 - **存储卷**是 Kubernetes 中的一种抽象，用于持久化应用程序的数据。存储卷可以附加到 Pod 中的容器，使得数据在容器重新调度时不会丢失。
+
+- Kubernetes（K8s）中的**存储卷（Volume）** 概念用于为Pod提供持久化和临时存储。Kubernetes 中的卷提供了对不同存储后端的抽象，允许应用程序将其数据持久化，即使 Pod 被删除或重新调度，存储数据也不会丢失。
+
+  存储卷主要分为两类：
+
+  1. **短期存储卷**（Pod 生命周期内存储）
+  2. **持久存储卷**（跨越Pod生命周期的持久化存储）
+
+  下面详细介绍 Kubernetes 中涉及到的存储卷的相关概念：
+
+  #### 1. **Volume（卷）**
+
+  Kubernetes 的卷（Volume）是用于挂载到 Pod 的目录，可以在 Pod 的多个容器之间共享文件系统。每个容器都可以通过挂载卷来访问共享数据。卷的生命周期与 Pod 绑定，Pod 结束时卷也会被清理，但不同的卷类型有不同的存储行为。
+
+  ##### 关键特性：
+
+  - **容器共享**：卷可以被多个容器共享，即 Pod 中的多个容器可以挂载同一个卷。
+  - **数据持久性**：默认情况下，卷的生命周期与 Pod 绑定，Pod 删除时卷也会被删除，但某些卷类型（如 Persistent Volume）可以实现数据持久化。
+
+  ##### 常见的 **短期存储卷** 类型：
+
+  1. **emptyDir**：Pod 创建时临时分配的空目录，Pod 删除时也删除。
+  2. **hostPath**：直接挂载主机文件系统的某个目录或文件到Pod中，适用于集群节点上有共享文件的场景。
+  3. **configMap**：将Kubernetes的 `ConfigMap` 内容作为文件挂载到容器中，适合配置管理。
+  4. **secret**：将 Kubernetes 的 `Secret` 内容作为文件挂载到容器中，适合传递敏感信息（如密码、令牌等）。
+  5. **downwardAPI**：将 Pod 的元数据信息（如标签、注解等）挂载为文件，容器可以通过文件读取这些信息。
+
+  ------
+
+  #### 2. **Persistent Volume（PV）持久卷**
+
+  **Persistent Volume（PV）** 是 Kubernetes 中的一种集群级别的资源，它代表了集群中的存储资源，通常由管理员预先配置。PV 是底层存储的抽象，存储类型可以是物理磁盘、云存储卷（如 AWS EBS、GCE Persistent Disk）、网络文件系统（如 NFS）、分布式存储（如 Ceph、GlusterFS）等。
+
+  #### 关键特性：
+
+  - **存储后端**：PV 可以是各种存储后端的抽象，如云存储、NFS、Ceph 等。
+
+  - **容量定义**：PV 定义了可以提供的存储容量（如 10GiB）。
+
+  - 访问模式
+
+    ：
+
+    - `ReadWriteOnce`：卷只能被一个节点以读写模式挂载。
+    - `ReadOnlyMany`：卷可以被多个节点以只读模式挂载。
+    - `ReadWriteMany`：卷可以被多个节点以读写模式挂载。
+
+  - **生命周期**：PV 的生命周期独立于 Pod，它是集群管理员创建的资源，且在使用者不再需要时，集群管理员可以回收或重用 PV。
+
+  - 回收策略
+
+    ：
+
+    - `Retain`：PV 释放后保留数据，需管理员手动清理。
+    - `Recycle`：PV 释放后，Kubernetes 自动清理数据（仅支持某些存储后端）。
+    - `Delete`：PVC 释放后自动删除 PV（适用于云存储）。
+
+  #### PV 示例：
+
+  ```
+  apiVersion: v1
+  kind: PersistentVolume
+  metadata:
+    name: pv-nfs
+  spec:
+    capacity:
+      storage: 10Gi
+    accessModes:
+      - ReadWriteOnce
+    persistentVolumeReclaimPolicy: Retain
+    nfs:
+      path: /exported/path
+      server: nfs-server.example.com
+  ```
+
+  ------
+
+  #### 3. **Persistent Volume Claim（PVC）持久卷声明**
+
+  **Persistent Volume Claim（PVC）** 是用户向 Kubernetes 请求存储的方式。PVC 声明了存储需求，如容量、访问模式等，Kubernetes 会根据 PVC 的要求寻找合适的 PV 并进行绑定。PVC 和 PV 之间的关系类似于计算机系统中的“请求-分配”机制。
+
+  #### 关键特性：
+
+  - **存储请求**：PVC 允许用户根据需要声明存储需求（如10Gi，访问模式 `ReadWriteOnce`）。
+  - **与 PV 的绑定**：PVC 创建时，Kubernetes 会尝试找到符合条件的 PV，并将它们绑定在一起。
+  - **动态存储供应**：如果没有符合要求的 PV，且 PVC 使用了 `StorageClass`，Kubernetes 可以通过 `StorageClass` 动态创建 PV。
+
+  #### PVC 示例：
+
+  ```
+  apiVersion: v1
+  kind: PersistentVolumeClaim
+  metadata:
+    name: pvc-nfs
+  spec:
+    accessModes:
+      - ReadWriteOnce
+    resources:
+      requests:
+        storage: 10Gi
+  ```
+
+  ------
+
+  #### 4. **StorageClass（SC）存储类**
+
+  **StorageClass（SC）** 是 Kubernetes 中的一种资源，它定义了存储卷的动态供应策略。集群管理员可以通过 StorageClass 定义如何动态地为 PVC 创建 PV（即存储卷）。不同的存储后端可以有不同的 `StorageClass`，如 AWS EBS、GCE PD、NFS 等。
+
+  ##### 关键特性：
+
+  - **Provisioner（供应器）**：`StorageClass` 通过 Provisioner 指定具体的存储供应后端（如 `kubernetes.io/aws-ebs`、`kubernetes.io/gce-pd`）。
+  - **动态存储供应**：PVC 请求时，如果没有现成的 PV 可用，Kubernetes 会根据 `StorageClass` 动态创建 PV。
+  - **参数**：`StorageClass` 可以包含与存储后端相关的配置参数（如存储类型、区域等）。
+  - **回收策略**：指定存储卷释放后的回收方式（如 `Retain`, `Delete`）。
+
+  ##### StorageClass 示例：
+
+  ```
+  apiVersion: storage.k8s.io/v1
+  kind: StorageClass
+  metadata:
+    name: fast
+  provisioner: kubernetes.io/aws-ebs
+  parameters:
+    type: io1
+    iopsPerGB: "10"
+    fsType: ext4
+  ```
+
+  ------
+
+  #### 5. **Volume Mounts（卷挂载）**
+
+  **Volume Mounts** 是在 Pod 定义中将卷挂载到容器文件系统中的过程。通过 `volumeMounts` 指定容器内的挂载路径以及对应的卷。卷可以在多个容器之间共享，且容器可以对挂载点设置不同的权限（读写或只读）。
+
+  ##### Volume Mounts 示例：
+
+  ```
+  apiVersion: v1
+  kind: Pod
+  metadata:
+    name: volume-demo
+  spec:
+    containers:
+    - name: container
+      image: busybox
+      volumeMounts:
+      - mountPath: /data
+        name: volume
+    volumes:
+    - name: volume
+      persistentVolumeClaim:
+        claimName: pvc-nfs
+  ```
+
+  ------
+
+  #### 6. **空卷（emptyDir）**
+
+  **emptyDir** 是最简单的卷类型。当 Pod 被调度到节点时，Kubernetes 会在该节点上创建一个空目录供 Pod 使用。`emptyDir` 的数据生命周期与 Pod 绑定，当 Pod 被删除时，数据也会被删除。
+
+  ##### 关键特性：
+
+  - **临时存储**：存储的数据在 Pod 运行期间是持久的，但 Pod 删除时，数据也会丢失。
+  - **应用场景**：用于缓存数据、共享容器间数据等。
+
+  ##### emptyDir 示例：
+
+  ```
+  apiVersion: v1
+  kind: Pod
+  metadata:
+    name: emptydir-demo
+  spec:
+    containers:
+    - name: container
+      image: busybox
+      volumeMounts:
+      - mountPath: /data
+        name: cache
+    volumes:
+    - name: cache
+      emptyDir: {}
+  ```
+
+  ------
+
+  #### 7. **HostPath**
+
+  **HostPath** 卷允许容器直接挂载节点上的某个目录或文件。这种卷的主要应用场景是需要直接访问主机文件系统（如日志、配置文件或设备），但这种卷类型存在潜在的安全风险，因为它依赖于主机环境的文件系统。
+
+  ##### HostPath 示例：
+
+  ```
+  apiVersion: v1
+  kind: Pod
+  metadata:
+    name: hostpath-demo
+  spec:
+    containers:
+    - name: container
+      image: busybox
+      volumeMounts:
+      - mountPath: /data
+        name: host-storage
+    volumes:
+    - name: host-storage
+      hostPath:
+        path: /mnt/data
+  ```
 
 ### 9. 滚动更新和回滚
 
@@ -115,7 +327,7 @@ Kubernetes 支持基于资源使用情况和应用程序的指标进行自动伸
 
 Kubernetes 使用命名空间（Namespace）来进行资源的逻辑分组和隔离，同时提供了精细的 RBAC（Role-Based Access Control）机制来管理和控制用户对集群资源的访问权限。
 
-
+sudo ctr images import kafka/kafka.tar
 
 
 
@@ -214,6 +426,12 @@ Kubernetes 使用命名空间（Namespace）来进行资源的逻辑分组和隔
    ```
 
    - 在指定 Pod 内部启动一个交互式 Shell。
+
+   - ### 查看某个特定 Pod 的详细信息
+
+     使用以下命令查看某个特定 Pod 的详细信息，包括状态、IP 地址、容器状态等：
+
+   - kubectl describe pod <pod-name> -n <namespace>
 
 3. **暴露服务**
 
