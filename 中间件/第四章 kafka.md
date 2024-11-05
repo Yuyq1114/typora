@@ -358,6 +358,129 @@ bin/kafka-log-dirs.sh --describe --bootstrap-server <broker_list> --topics <topi
    bin/kafka-consumer-groups.sh --reset-offsets --group my-group --topic my-topic --to-earliest --bootstrap-server localhost:9092 --execute
    ```
 
+## 实践常用命令
+
+
+
+**kafka-topics.sh --bootstrap-server localhost:9092 --delete --topic your_topic_name 删除topic**
+
+
+
+**kafka-topics.sh --bootstrap-server localhost:9092 --create --topic your_topic_name --partitions 1 --replication-factor 1 创建topic**
+
+**kubectl exec -it <kafka-pod-name> -n <namespace> -- /bin/bash 进入topic**
+
+**kafka-topics.sh --bootstrap-server localhost:9092 --list 列出topic**
+
+
+
+## zookeeper命令
+
+### 1. 进入 Zookeeper 容器
+
+首先，使用以下命令进入 Zookeeper 容器：
+
+```
+
+kubectl exec -it zookeeper-pod-name -n your-namespace -- /bin/bash
+
+cd bin
+
+./zkCli.sh -server localhost:2181
+
+
+```
+
+#### 2.1 获取所有结点状态
+
+要查看所有结点的状态，您可以使用 `ls` 命令列出某个路径下的所有结点。例如，查看根结点下的所有子结点：
+
+```
+
+ls /
+如 ls /brokers/topics
+```
+
+要获取特定结点的详细信息，可以使用 `get` 命令：
+
+```
+
+get /path/to/node
+```
+
+#### 2.2 删除结点
+
+如果您需要删除某个结点，可以使用 `delete` 命令：
+
+```
+
+delete /path/to/node
+```
+
+请注意，删除结点的前提是该结点必须是一个空结点，或所有子结点都必须先删除。
+
+#### 2.3 获取结点的状态
+
+您可以使用 `get` 命令查看结点的详细信息，包括其数据、版本等：
+
+```
+
+get /path/to/node
+```
+
+#### 2.4 创建结点
+
+创建一个新的结点，可以使用 `create` 命令：
+
+```
+
+create /path/to/node "data"
+```
+
+其中 `"data"` 是您要存储在该结点的数据。
+
+#### 2.5 设置结点数据
+
+如果您想更新某个结点的数据，可以使用 `set` 命令：
+
+```
+
+set /path/to/node "new-data"
+```
+
+#### 2.6 查看结点的子结点
+
+使用 `ls` 命令可以查看某个结点下的所有子结点：
+
+```
+
+ls /path/to/node
+```
+
+#### 2.7 查看 Zookeeper 的状态
+
+可以使用 `stat` 命令查看当前 Zookeeper 服务器的状态：
+
+```
+
+stat /path/to/node
+```
+
+### 3. 退出 Zookeeper Shell
+
+完成操作后，您可以使用 `exit` 命令退出 Zookeeper shell：
+
+```
+
+exit
+```
+
+### 总结
+
+
+
+
+
 
 
 ## KRaft和Zookeeper

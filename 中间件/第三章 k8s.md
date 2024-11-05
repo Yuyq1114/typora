@@ -384,6 +384,8 @@ sudo ctr images import kafka/kafka.tar
    ```
 
    - 显示指定资源实例的详细信息，如 Pod、Service 等。
+   - 查看某个namespace下的某个pod的信息：
+     - kubectl describe pod kafk-0 -n dsamp
 
 3. **创建资源**
 
@@ -400,6 +402,8 @@ sudo ctr images import kafka/kafka.tar
    ```
 
    - 删除指定的资源实例，如 Pod、Service 等。
+   - kubectl delete pod my-pod --grace-period=0 --force
+   - 检查 PV 是否处于 `Terminating` 状态，这种状态可能被 `Finalizer` 阻止删除。kubectl edit pv <pv-name>找到 `finalizers` 字段并将其删除，保存退出。
 
 5. **修改资源**
 
@@ -422,7 +426,7 @@ sudo ctr images import kafka/kafka.tar
 2. **进入 Pod 内部**
 
    ```
-   kubectl exec -it POD_NAME -- /bin/bash
+   kubectl exec -it POD_NAME -n <namaspace> -- /bin/bash
    ```
 
    - 在指定 Pod 内部启动一个交互式 Shell。
@@ -432,6 +436,10 @@ sudo ctr images import kafka/kafka.tar
      使用以下命令查看某个特定 Pod 的详细信息，包括状态、IP 地址、容器状态等：
 
    - kubectl describe pod <pod-name> -n <namespace>
+
+   - 也可以内部发送消息
+
+   - kafka-console-producer.sh --broker-list <broker-address>:<port> --topic <topic-name>
 
 3. **暴露服务**
 
@@ -466,6 +474,8 @@ sudo ctr images import kafka/kafka.tar
    ```
 
    - 列出集群中所有的持久化存储卷。
+   - kubectl get pvc -n <namespace>
+   - kubectl get pv -n <namespace>
 
 3. **管理命名空间**
 
@@ -618,3 +628,4 @@ sudo ctr images import kafka/kafka.tar
   - **配置管理**：使用 ConfigMap 和 Secret 管理应用配置和敏感数据，实现配置的灵活性和安全性。
 - **版本控制**：
   - **配置版本化**：对配置进行版本控制，确保配置变更可追溯，并可以轻松回滚到先前版本。
+  - 

@@ -379,3 +379,5 @@ sed '2,4s/apple/orange/' filename
 ```
 sed '/pattern/,$d' filename
 ```
+
+#### 4.通过文件头加上-e或者每句后加上 ||true  ，实现执行该句失败后继续执行
