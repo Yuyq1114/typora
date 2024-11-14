@@ -1,4 +1,4 @@
-![](D:\ProgramFile\typora\中间件\image\k8s_architecture.png)
+![](C:\Users\31178\Desktop\k8s_architecture.png)
 
 ## 基本概念
 
