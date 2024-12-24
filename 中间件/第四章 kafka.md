@@ -1,4 +1,4 @@
-## 相关概念
+# 相关概念
 
 ### 1. 主题（Topic）
 
@@ -62,7 +62,7 @@
 
 
 
-## 原理
+# 原理
 
 ### 1. 架构概述
 
@@ -168,7 +168,11 @@ Kafka 的架构主要由以下几个部分组成：
 
 
 
-## 常用命令
+# 常用命令
+
+```
+<BROKER_LIST>` 是指 **Kafka Broker 的地址列表**，用于指定与 Kafka 集群进行通信的入口。它的格式通常是 `hostname:port` 或者 `ip:port
+```
 
 ### 1. 启动和停止 Kafka 服务
 
@@ -220,7 +224,9 @@ bin/kafka-topics.sh --create --topic <topic_name> --bootstrap-server <broker_lis
 bin/kafka-topics.sh --list --bootstrap-server <broker_list>
 ```
 
-- 列出所有主题。
+- **列出所有主题。<broker_list> 是127.0.0.1:9092**
+- **cd bin**
+- **sh 就可以进入/bin**
 
 #### 查看主题详情
 
@@ -237,6 +243,14 @@ bin/kafka-topics.sh --delete --topic <topic_name> --bootstrap-server <broker_lis
 ```
 
 - 删除指定的主题。
+
+- 
+
+- ```
+  kafka-topics.sh --bootstrap-server <broker_address> --delete --topic <topic_name>
+  ```
+
+  替换 `<broker_address>` 为你的 Kafka Broker 地址（如 `localhost:9092`），替换 `<topic_name>` 为需要m删除的 Topic 名称。
 
 ### 3. 消费者组管理
 
@@ -374,7 +388,7 @@ bin/kafka-log-dirs.sh --describe --bootstrap-server <broker_list> --topics <topi
 
 
 
-## zookeeper命令
+# zookeeper命令
 
 ### 1. 进入 Zookeeper 容器
 
@@ -483,7 +497,7 @@ exit
 
 
 
-## KRaft和Zookeeper
+# KRaft和Zookeeper
 
 ### Zookeeper 模式
 
@@ -546,7 +560,7 @@ exit
 | **迁移难度**   | 不需要迁移                           | 需要从 Zookeeper 模式迁移到 KRaft 模式  |
 | **适用场景**   | 现有的生产环境或需要成熟技术的场景   | 新部署的 Kafka 集群或希望简化运维的场景 |
 
-##  问题和解决方案（内部算法）
+#  问题和解决方案（内部算法）
 
 ### 1. **数据丢失**
 
@@ -671,3 +685,208 @@ exit
 **kafka官网**https://kafka.apache.org/quickstart
 
 **很好的博客**https://www.cnblogs.com/huangdh/p/16886327.html
+
+
+
+
+
+# go的kafka框架
+
+`github.com/confluentinc/confluent-kafka-go/v2` 是 Confluent 提供的 Kafka 客户端库，它允许 Go 程序与 Kafka 集群进行通信。Kafka 是一个分布式的流式处理平台，广泛用于消息队列、日志聚合、流处理等场景。通过使用 `confluent-kafka-go`，你可以轻松地在 Go 中实现 Kafka 消费者和生产者。
+
+下面我将详细介绍如何使用 `confluent-kafka-go` 进行 Kafka 生产和消费消息的基本操作，包括一些常见的配置和使用场景。
+
+### 安装
+
+首先，你需要安装 `confluent-kafka-go` 库。你可以通过 `go get` 命令安装：
+
+```
+bash
+
+
+复制代码
+go get github.com/confluentinc/confluent-kafka-go/v2
+```
+
+### 配置
+
+`confluent-kafka-go` 提供了一些配置选项，可以用来设置 Kafka 客户端的行为，配置包括 Kafka 集群的地址、消费者和生产者的配置等。所有配置项都可以通过一个 `ConfigMap`（即 `map[string]string`）来设置。
+
+### 1. **创建 Kafka 生产者（Producer）**
+
+Kafka 生产者用于将消息发送到 Kafka 集群中的主题（Topic）。下面是一个简单的 Kafka 生产者示例。
+
+#### 示例：生产者代码
+
+```
+go复制代码package main
+
+import (
+	"fmt"
+	"log"
+
+	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
+)
+
+func main() {
+	// 配置 Kafka 生产者
+	config := &kafka.ConfigMap{
+		"bootstrap.servers": "localhost:9092", // Kafka 集群的地址
+	}
+
+	// 创建一个 Kafka 生产者实例
+	producer, err := kafka.NewProducer(config)
+	if err != nil {
+		log.Fatalf("Failed to create producer: %s\n", err)
+	}
+
+	defer producer.Close()
+
+	// 定义要发送的消息
+	topic := "test-topic"
+	message := "Hello Kafka!"
+
+	// 发送消息到 Kafka
+	deliveryChan := make(chan kafka.Event)
+	err = producer.Produce(&kafka.Message{
+		TopicPartition: kafka.TopicPartition{Topic: &topic, Partition: kafka.PartitionAny},
+		Value:          []byte(message),
+	}, deliveryChan)
+
+	if err != nil {
+		log.Printf("Error producing message: %v", err)
+	}
+
+	// 等待确认消息的送达状态
+	e := <-deliveryChan
+	m := e.(*kafka.Message)
+	if m.Error != nil {
+		log.Printf("Failed to deliver message: %v\n", m.Error)
+	} else {
+		fmt.Printf("Successfully delivered message to topic %s [partition %d] at offset %d\n",
+			*m.TopicPartition.Topic, m.TopicPartition.Partition, m.TopicPartition.Offset)
+	}
+
+	close(deliveryChan)
+}
+```
+
+#### 代码说明：
+
+- **配置**: 使用 `ConfigMap` 配置 Kafka 生产者，`bootstrap.servers` 指定了 Kafka 集群的地址。
+- **生产者实例**: `kafka.NewProducer(config)` 创建一个 Kafka 生产者实例。
+- **发送消息**: 使用 `producer.Produce()` 方法发送消息，并通过 `deliveryChan` 通道接收发送结果。
+- **消息确认**: 通过 `deliveryChan` 检查消息是否成功送达。
+
+#### 生产者常用配置项：
+
+- `bootstrap.servers`: Kafka 集群的地址。
+- `acks`: 消息确认级别。`acks=all` 表示要求所有副本都确认接收到消息后才认为发送成功。
+- `linger.ms`: 设置生产者等待的最大时间，以批量发送消息。
+- `batch.num.messages`: 设置批量发送的消息数。
+
+### 2. **创建 Kafka 消费者（Consumer）**
+
+Kafka 消费者用于从 Kafka 主题中读取消息。以下是一个简单的 Kafka 消费者示例。
+
+#### 示例：消费者代码
+
+```
+go复制代码package main
+
+import (
+	"fmt"
+	"log"
+
+	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
+)
+
+func main() {
+	// 配置 Kafka 消费者
+	config := &kafka.ConfigMap{
+		"bootstrap.servers": "localhost:9092",  // Kafka 集群的地址
+		"group.id":          "my-consumer-group", // 消费者组 ID
+		"auto.offset.reset": "earliest", // 从最早的消息开始消费
+	}
+
+	// 创建 Kafka 消费者实例
+	consumer, err := kafka.NewConsumer(config)
+	if err != nil {
+		log.Fatalf("Failed to create consumer: %s\n", err)
+	}
+
+	defer consumer.Close()
+
+	// 订阅 Kafka 主题
+	err = consumer.Subscribe("test-topic", nil)
+	if err != nil {
+		log.Fatalf("Failed to subscribe to topic: %s\n", err)
+	}
+
+	// 消费消息
+	for {
+		msg, err := consumer.ReadMessage(-1) // -1 表示阻塞直到接收到消息
+		if err != nil {
+			log.Printf("Error while consuming message: %v\n", err)
+			continue
+		}
+
+		// 打印接收到的消息
+		fmt.Printf("Received message: %s\n", string(msg.Value))
+	}
+}
+```
+
+#### 代码说明：
+
+- **配置**: 使用 `ConfigMap` 配置 Kafka 消费者，`bootstrap.servers` 配置 Kafka 集群的地址，`group.id` 配置消费者组 ID，`auto.offset.reset` 配置消费者的偏移量行为。
+- **消费者实例**: 使用 `kafka.NewConsumer(config)` 创建一个 Kafka 消费者实例。
+- **订阅主题**: 使用 `consumer.Subscribe("test-topic", nil)` 订阅指定的 Kafka 主题。
+- **读取消息**: 使用 `consumer.ReadMessage(-1)` 阻塞地读取消息。
+
+#### 消费者常用配置项：
+
+- `bootstrap.servers`: Kafka 集群的地址。
+- `group.id`: 消费者组的 ID。Kafka 使用消费者组来管理多个消费者。
+- `auto.offset.reset`: 如果没有找到偏移量或者偏移量无效，`earliest` 表示从最早的消息开始消费，`latest` 表示从最新的消息开始消费。
+
+### 3. **处理消息的回调**
+
+除了在消费者中直接调用 `ReadMessage()` 读取消息外，还可以使用 `Event` 机制来处理回调事件，例如消息发送成功或失败、消费者关闭等事件。
+
+```
+go复制代码// 监听事件回调
+for e := range producer.Events() {
+	switch ev := e.(type) {
+	case *kafka.Message:
+		if ev.Error != nil {
+			log.Printf("Message delivery failed: %v", ev.Error)
+		} else {
+			log.Printf("Message delivered to %v", ev.TopicPartition)
+		}
+	}
+}
+```
+
+### 4. **错误处理与重试机制**
+
+Kafka 客户端通常会内置一些错误处理机制。当消息发送失败时，生产者会根据配置（例如 `acks`）和消息交付保证策略进行重试。对于消费者，Kafka 客户端会在消费失败时返回错误，开发者可以根据需求进行相应的处理。
+
+### 5. **支持的功能和配置**
+
+`confluent-kafka-go` 提供了很多高级功能，支持高效的 Kafka 使用场景。例如：
+
+- **分区和副本**：支持 Kafka 的分区和副本机制，确保消息高可用性和负载均衡。
+- **异步生产**：生产者支持异步发送消息，提升性能。
+- **消费者组**：支持 Kafka 消费者组，允许多个消费者共同消费消息。
+
+### 6. **更多功能**
+
+- **事务支持**：Kafka 生产者支持事务，允许用户确保一系列消息的原子性（即要么全部成功，要么全部失败）。
+- **Kafka Streams**：通过使用 Confluent 提供的 `kafka-streams` 库，可以在 Go 中实现流处理操作。
+- **消息压缩**：支持多种消息压缩格式（例如 `gzip`、`snappy` 等）。
+
+### 参考文档
+
+- 官方 GitHub: https://github.com/confluentinc/confluent-kafka-go
+- Kafka 官方文档: https://kafka.apache.org/

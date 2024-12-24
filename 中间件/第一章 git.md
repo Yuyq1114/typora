@@ -169,3 +169,356 @@ git add conflicted_file
 git commit -m "Resolved merge conflict in conflicted_file"
 
 git push origin branch_name
+
+
+
+##   命令详解
+
+### **1. 初始化仓库**
+
+- **`git init`**
+  初始化一个 Git 仓库，将目录变为受 Git 管理的项目。
+
+  ```
+  git init
+  ```
+
+- **`git clone`**
+  从远程仓库克隆项目到本地。
+
+  ```
+  git clone <repository_url>
+  ```
+
+------
+
+### **2. 工作区相关命令**
+
+#### 查看状态
+
+- `git status`
+
+  查看工作区和暂存区文件状态。
+
+  ```
+  git status
+  ```
+
+#### 比较文件
+
+- `git diff`
+
+  查看工作区中修改的内容（未暂存的部分）。
+
+  ```
+  git diff
+  ```
+
+------
+
+### **3. 暂存区相关命令**
+
+#### 添加文件到暂存区
+
+- **`git add <file>`**
+  将指定文件添加到暂存区。
+
+  ```
+  git add file.txt
+  ```
+
+- **`git add .`**
+  添加当前目录下的所有更改到暂存区。
+
+#### 从暂存区中移除文件
+
+- `git reset <file>`
+
+  将暂存区中的指定文件移除，但保留工作区的修改。
+
+  ```
+  git reset file.txt
+  git reset --hard HEAD//如果不想保留任何更改，可以强制重置分支
+  ```
+
+------
+
+### **4. 本地仓库相关命令**
+
+#### 提交更改
+
+- **`git commit -m "<message>"`**
+  将暂存区的内容提交到本地仓库，并添加提交信息。
+
+  ```
+  git commit -m "Initial commit"
+  ```
+
+- **`git commit -a -m "<message>"`**
+  跳过暂存区，直接提交工作区中已跟踪的文件修改。
+
+#### 修改提交
+
+- **`git commit --amend`**
+  修改上一次提交的信息或文件。
+
+#### fetch
+
+- 获取某个远程仓库（例如 `origin`）的更新：
+
+  ```
+  git fetch origin
+  ```
+
+#### 查看提交历史
+
+- **`git log`**
+  查看提交历史。
+
+  ```
+  git log
+  ```
+
+- **`git log --oneline`**
+  简化输出的提交历史。
+
+  ```
+  git log --oneline
+  ```
+
+------
+
+### **5. 远程仓库相关命令**
+
+#### 添加远程仓库
+
+- `git remote add <name> <url>`
+
+  将远程仓库关联到本地仓库。
+
+  ```
+  git remote add origin https://github.com/user/repo.git
+  ```
+
+#### 推送更改
+
+- `git push <remote> <branch>`
+
+  将本地分支内容推送到远程分支。
+
+  ```
+  git push origin main
+  ```
+
+#### 拉取更改
+
+- `git pull <remote> <branch>`
+
+  拉取远程分支的最新内容并合并到本地。
+
+  ```
+  git pull origin main
+  ```
+
+#### 查看远程仓库
+
+- `git remote -v`
+
+  查看远程仓库的详细信息。
+
+  ```
+  git remote -v
+  ```
+
+------
+
+### **6. 分支管理**
+
+#### 查看分支
+
+- **`git branch`**
+  查看本地分支列表。
+
+  ```
+  git branch
+  ```
+
+- **`git branch -r`**
+  查看远程分支列表。
+
+#### 创建分支
+
+- `git branch <branch_name>`
+
+  创建新分支。
+
+  ```
+  git branch feature-1
+  ```
+
+#### 切换分支
+
+- **`git checkout <branch_name>`**
+  切换到指定分支。
+
+  ```
+  git checkout main
+  ```
+
+- **`git switch <branch_name>`**
+  使用较新的切换分支方式。
+
+#### 删除分支
+
+- `git branch -d <branch_name>`
+
+  删除本地分支。
+
+  ```
+  git branch -d feature-1
+  ```
+
+------
+
+#### 合并分支
+
+##### **1. 合并分支的基本概念**
+
+- **目标分支（当前分支）**：需要合并更改到的分支。
+- **源分支**：提供更改的分支。
+- 合并后，目标分支将包含源分支的更改记录。
+
+------
+
+#### **2. 使用命令行合并分支**
+
+##### **（1）检查当前分支**
+
+确保切换到需要合并更改的目标分支：
+
+```
+git checkout <target-branch>
+```
+
+示例：
+
+```
+git checkout main
+```
+
+##### **（2）执行合并**
+
+运行以下命令，将源分支合并到当前分支：
+
+```
+git merge <source-branch>
+```
+
+示例：
+
+```
+git merge feature-branch
+```
+
+##### **（3）处理合并冲突（如果有）**
+
+- 如果 Git 检测到冲突，合并将暂停，你会看到类似下面的信息：
+
+  ```
+  CONFLICT (content): Merge conflict in <file>
+  ```
+  
+- 解决冲突后，运行以下命令完成合并：
+
+  ```
+  git add <conflicted-file>
+  git commit
+  ```
+
+### **7. 标签管理**
+
+#### 创建标签
+
+- **`git tag <tag_name>`**
+  创建轻量标签。
+
+  ```
+  git tag v1.0
+  ```
+
+- **`git tag -a <tag_name> -m "<message>"`**
+  创建带注释的标签。
+
+  ```
+  git tag -a v1.0 -m "Release version 1.0"
+  ```
+
+#### 推送标签
+
+- `git push <remote> <tag_name>`
+
+  将标签推送到远程仓库。
+
+  ```
+  git push origin v1.0
+  ```
+
+------
+
+### **8. 撤销操作**
+
+#### 恢复文件
+
+- `git checkout -- <file>`
+
+  恢复工作区中文件的修改。
+
+  ```
+  git checkout -- file.txt
+  ```
+
+#### 回滚提交
+
+- `git reset`
+
+  回滚到指定的提交：
+
+  - **`--soft`**: 保留提交和暂存区内容。
+  - **`--mixed`**: 保留提交，但清空暂存区。
+  - **`--hard`**: 清空提交和暂存区，直接恢复到指定状态。
+  
+- `git revert`：通过生成一个新的提交来撤销某个提交，不修改提交历史，适合公开历史的项目。
+
+------
+
+### **9. 其他命令**
+
+#### 清理未跟踪文件
+
+- `git clean -f`
+
+  删除未跟踪的文件。
+
+  ```
+  git clean -f
+  ```
+
+#### 查看变更
+
+- `git show`
+
+  查看最新一次提交的详细变更。
+
+  ```
+  git show
+  ```
+
+#### 比较版本
+
+- `git diff <commit1> <commit2>`
+
+  比较两个提交的差异。
+
+  ```
+  git diff HEAD~1 HEAD
+  ```

@@ -18,6 +18,84 @@ PostgreSQL 是一个功能强大、开源的对象关系型数据库管理系统
    - PostgreSQL 拥有一个功能强大的查询优化器，能够智能地选择最优的查询执行计划，从而显著提高查询性能，特别是在复杂查询和大数据集的处理方面表现出色。
 8. **扩展的数据类型**：
    - 除了标准的数据类型，PostgreSQL 还支持 JSON、XML、数组、范围类型、HStore、UUID 等多种复杂的数据类型，适用于各种应用场景。
+   
+   **具体的：**
+   
+   1. #### 数值类型
+   
+     (1) 整数类型
+     SMALLINT: 2 字节整数，范围：-32,768 到 32,767。
+     INTEGER / INT: 4 字节整数，范围：-2,147,483,648 到 2,147,483,647。
+     BIGINT: 8 字节整数，范围：-9,223,372,036,854,775,808 到 9,223,372,036,854,775,807。
+     (2) 浮点类型
+     REAL: 4 字节浮点数，精度约为 6 位小数。
+     DOUBLE PRECISION: 8 字节浮点数，精度约为 15 位小数。
+     (3) 精确数值类型
+     NUMERIC(precision, scale) / DECIMAL(precision, scale): 精确的任意位数小数，precision 是总位数，scale 是小数位数。
+   2. #### 字符串类型
+   
+     (1) 定长和变长字符类型
+     CHAR(n) / CHARACTER(n): 定长字符串，长度为 n。
+     VARCHAR(n) / CHARACTER VARYING(n): 变长字符串，最大长度为 n。
+     TEXT: 不限制长度的变长字符串。
+     (2) 特殊字符串类型
+     BYTEA: 二进制数据（可存储文件、图片等）。
+   3. #### 布尔类型
+   
+     BOOLEAN: 只有三个值：TRUE、FALSE 和 NULL。
+   4. #### 日期和时间类型
+   
+     DATE: 存储日期（年-月-日）。
+     TIME [WITHOUT TIME ZONE]: 存储时间（时:分:秒）。
+     TIMESTAMP [WITHOUT TIME ZONE]: 存储日期和时间。
+     TIME WITH TIME ZONE / TIMESTAMP WITH TIME ZONE: 存储带时区的时间戳。
+     INTERVAL: 表示时间间隔（如天、小时、分钟等）。
+   5. #### 网络类型
+   
+     CIDR: 网络地址（如 192.168.1.0/24）。
+     INET: IP 地址（如 192.168.1.1 或 ::1）。
+     MACADDR: MAC 地址（如 08:00:2b:01:02:03）。
+   6. #### 枚举类型
+   
+     ENUM: 自定义的枚举类型，例如：
+     sql
+     复制代码
+     CREATE TYPE mood AS ENUM ('happy', 'sad', 'neutral');
+   7. #### 几何类型
+   
+     POINT: 点（如 (x, y)）。
+     LINE: 无限直线。
+     LSEG: 线段。
+     BOX: 矩形。
+     PATH: 路径。
+     POLYGON: 多边形。
+     CIRCLE: 圆。
+   8. #### JSON 和 JSONB 类型
+   
+     JSON: 存储 JSON 格式的文本数据。
+     JSONB: 存储二进制格式的 JSON 数据，支持更快的查询和索引。
+   9. #### 数组类型
+   
+     PostgreSQL 支持任何数据类型的数组，例如：
+     sql
+     复制代码
+     INTEGER[]  -- 整数数组
+     TEXT[]     -- 字符串数组
+   10. #### 特殊类型
+   
+       UUID: 存储通用唯一标识符（如 550e8400-e29b-41d4-a716-446655440000）。
+       XML: 存储 XML 数据。
+       TSVECTOR: 用于全文搜索的文档数据。
+       TSQUERY: 用于全文搜索的查询条件。
+   11. #### 自定义类型
+   
+       可以使用 CREATE TYPE 定义自定义数据类型（例如复合类型、枚举类型等）。
+   12. #### 范围类型
+   
+       INT4RANGE: 整数范围。
+       NUMRANGE: 数字范围。
+       TSRANGE: 时间范围。
+       TSTZRANGE: 带时区的时间范围。
 9. **高可用性与数据复制**：
    - PostgreSQL 支持多种高可用性和数据复制解决方案，包括异步和同步复制、流复制、逻辑复制等，适合构建高可用的分布式数据库系统。
 10. **全文检索**：

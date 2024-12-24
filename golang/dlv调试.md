@@ -30,7 +30,7 @@ echo "export PATH=$PATH:$(go env GOPATH)/bin" >> ~/.bashrc
 
 source ~/.bashrc
 
- 
+ dlv version
 
 ## 调试
 
@@ -77,6 +77,8 @@ dlv connect 远程ip:2345
 进入当前行的函数内部（逐步执行）：
 
 (dlv) step
+
+**so:  如果用s陷入到函数内部，可用该命令快速跳出**
 
 **f. print** **或 p**
 
