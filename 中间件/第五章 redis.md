@@ -75,7 +75,7 @@ Redis（Remote Dictionary Server）是一个开源的、内存中的数据结构
 
 
 
-##  问题和解决方案（内部算法）
+## 问题和解决方案（内部算法）
 
 ### 1. **数据丢失**
 
@@ -181,3 +181,279 @@ Redis 是一个内存数据存储系统，可能会遇到内存消耗过大的�
   - **集群迁移**：使用 Redis 集群的在线迁移功能，将数据从旧集群迁移到新集群。
 - **分布式数据迁移**：
   - **Redis 集群分片**：通过集群重新分片功能，平滑地将数据迁移到新节点，减少对服务的影响。
+
+
+
+
+
+#  常用命令
+
+## **1. 通用命令**
+
+- `PING`：测试连接是否正常。
+
+  ```
+  PING
+  ```
+  
+  返回 `PONG` 表示 Redis 正常工作。
+  
+- `SELECT`：切换数据库。
+
+  ```
+  
+  SELECT index
+  ```
+  
+  Redis 默认有 16 个数据库，索引从 0 开始。
+  
+- `KEYS pattern`：查找匹配指定模式的所有键。
+
+  ```
+  
+  KEYS user:*
+  ```
+  
+- `DEL key [key ...]`：删除指定键。
+
+  ```
+  
+  DEL user:123
+  ```
+  
+- `EXISTS key`：检查键是否存在。
+
+  ```
+  
+  EXISTS user:123
+  ```
+  
+- `EXPIRE key seconds`：为键设置过期时间。
+
+  ```
+  
+  EXPIRE user:123 60
+  ```
+  
+- `TTL key`：获取键的剩余过期时间（以秒为单位）。
+
+  ```
+  
+  TTL user:123
+  ```
+
+------
+
+## **2. 字符串（String）操作**
+
+- `SET key value`：设置键的值。
+
+  ```
+  
+  SET name "Alice"
+  ```
+  
+- `GET key`：获取键的值。
+
+  ```
+  
+  GET name
+  ```
+  
+- `SETEX key seconds value`：设置键的值并设置过期时间。
+
+  ```
+  
+  SETEX session:123 60 "active"
+  ```
+  
+- `INCR key` / `DECR key`：自增/自减键的数值。
+
+  ```
+  
+  INCR counter
+  ```
+  
+- `APPEND key value`：追加字符串到键的末尾。
+
+  ```
+  
+  APPEND name " Smith"
+  ```
+
+------
+
+## **3. 哈希（Hash）操作**
+
+- `HSET key field value`：设置哈希字段的值。
+
+  ```
+  
+  HSET user:1 name "Alice"
+  ```
+  
+- `HGET key field`：获取哈希字段的值。
+
+  ```
+  
+  HGET user:1 name
+  ```
+  
+- `HGETALL key`：获取哈希的所有字段和值。
+
+  ```
+  
+  HGETALL user:1
+  ```
+  
+- `HDEL key field [field ...]`：删除哈希中的字段。
+
+  ```
+  
+  HDEL user:1 name
+  ```
+
+------
+
+## **4. 列表（List）操作**
+
+- `LPUSH key value [value ...]`：在列表头部插入元素。
+
+  ```
+  
+  LPUSH tasks "task1"
+  ```
+  
+- `RPUSH key value [value ...]`：在列表尾部插入元素。
+
+  ```
+  
+  RPUSH tasks "task2"
+  ```
+  
+- `LPOP key` / `RPOP key`：移除并返回列表头部/尾部的元素。
+
+  ```
+  
+  LPOP tasks
+  ```
+  
+- `LRANGE key start stop`：获取列表的部分元素。
+
+  ```
+  
+  LRANGE tasks 0 -1
+  ```
+
+------
+
+## **5. 集合（Set）操作**
+
+- `SADD key member [member ...]`：向集合添加元素。
+
+  ```
+  
+  SADD tags "redis" "database"
+  ```
+  
+- `SMEMBERS key`：获取集合的所有成员。
+
+  ```
+  
+  SMEMBERS tags
+  ```
+  
+- `SREM key member [member ...]`：移除集合中的元素。
+
+  ```
+  
+  SREM tags "redis"
+  ```
+  
+- `SISMEMBER key member`：检查成员是否在集合中。
+
+  ```
+  
+  SISMEMBER tags "redis"
+  ```
+
+------
+
+## **6. 有序集合（Sorted Set）操作**
+
+- `ZADD key score member [score member ...]`：添加成员及其分数。
+
+  ```
+  
+  ZADD leaderboard 100 "Alice"
+  ```
+  
+- `ZRANGE key start stop [WITHSCORES]`：按分数从小到大获取成员。
+
+  ```
+  
+  ZRANGE leaderboard 0 -1 WITHSCORES
+  ```
+  
+- `ZREM key member [member ...]`：移除有序集合中的成员。
+
+  ```
+  
+  ZREM leaderboard "Alice"
+  ```
+  
+- `ZSCORE key member`：获取成员的分数。
+
+  ```
+  
+  ZSCORE leaderboard "Alice"
+  ```
+
+------
+
+## **7. 发布与订阅（Pub/Sub）**
+
+- `PUBLISH channel message`：向频道发布消息。
+
+  ```
+  
+  PUBLISH news "Breaking news!"
+  ```
+  
+- `SUBSCRIBE channel [channel ...]`：订阅频道。
+
+  ```
+  
+  SUBSCRIBE news
+  ```
+
+------
+
+## **8. 事务**
+
+- `MULTI`：开始事务。
+- `EXEC`：执行事务。
+- `DISCARD`：取消事务。
+
+------
+
+## **9. 脚本（Lua）**
+
+- ```
+  EVAL script numkeys key [key ...] arg [arg ...]
+  ```
+
+  ：执行 Lua 脚本。
+
+  ```
+  
+  EVAL "return redis.call('SET', KEYS[1], ARGV[1])" 1 key1 value1
+  ```
+
+------
+
+## **10. 数据迁移与备份**
+
+- `SAVE`：生成快照。
+- `BGSAVE`：在后台生成快照。
+- `RESTORE key ttl serialized-value`：恢复数据。

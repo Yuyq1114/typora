@@ -1,3 +1,7 @@
+
+
+##  代码
+
 - 并发编程中，main方法结束就直接结束，time.sleep让main等待几秒。
 - 不同目录下函数名大写表示权限为公共
 - 单引号 byte、rune，双引号 字符串，反引号 展示输出
@@ -31,147 +35,12 @@
 - `fmt.Scanf` 跳过输入的原因通常与 `fmt.Scanf` 对输入的解析方式有关。特别是在读取字符串时，`fmt.Scanf("%s", &name)` 和 `fmt.Scanf("%s", &message)` 使用 `%s` 格式化字符串，它会读取直到第一个空白字符（如空格、制表符或换行符）。因为它还会读取到输入缓冲区中的换行符
 - go使用`github.com/confluentinc/confluent-kafka-go/v2/kafka`中的`kafka.NewProducer`是，一直显示未定义，这是由于go未开启`$env:CGO_ENABLED = "1"`，让go可以引用c的编译。且需要安装gcc编译器。
 - 函数参数定义时使用 `...` 代表可变参数，也就是参数数量不定。可变参数允许传递任意数量的某种类型的参数给函数。可变参数必须是函数的最后一个参数。如果函数有其他参数，可变参数必须放在最后。可变参数实际上是一个切片（slice），在函数内部可以像操作切片那样使用它。
-- 可以实现主线程等待子线程信号的几种方法“
-
-```
-1.无缓冲管道
-func main() {
-	wait := make(chan struct{})
-	go func() {
-		for {
-			i := rand.Intn(10)
-			fmt.Println(i)
-			if i == 5 {
-				close(wait)
-				break
-			}
-		}
-	}()
-	<-wait
-}
-2.使用sync.WaitGroup
-func main() {
-	var wg sync.WaitGroup
-	wg.Add(1) // 增加等待计数
-
-	go func() {
-		defer wg.Done() // 减少等待计数
-		i := rand.Intn(10)
-		fmt.Println(i)
-	}()
-
-	wg.Wait() // 主线程等待所有goroutine完成
-	fmt.Println("Main goroutine continues.")
-}
-3.使用 sync.Mutex 和 sync.Cond
-func main() {
-	var mu sync.Mutex
-	cond := sync.NewCond(&mu)
-	done := false
-
-	go func() {
-		mu.Lock()
-		i := rand.Intn(10)
-		fmt.Println(i)
-		done = true
-		cond.Signal() // 通知主线程继续
-		mu.Unlock()
-	}()
-
-	mu.Lock()
-	for !done {
-		cond.Wait() // 主线程等待信号
-	}
-	mu.Unlock()
-
-	fmt.Println("Main goroutine continues.")
-}
-4.使用 context 包
-func main() {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	go func() {
-		i := rand.Intn(10)
-		fmt.Println(i)
-		cancel() // 通知主线程继续
-	}()
-
-	<-ctx.Done() // 主线程等待信号
-	fmt.Println("Main goroutine continues.")
-}
-5.使用带缓冲的通道（Buffered Channel）
-func main() {
-	done := make(chan struct{}, 2) // 缓冲大小为2，允许两个goroutine同时完成
-
-	go func() {
-		i := rand.Intn(10)
-		fmt.Println(i)
-		done <- struct{}{} // 通知主线程继续
-	}()
-
-	go func() {
-		i := rand.Intn(10)
-		fmt.Println(i)
-		done <- struct{}{} // 通知主线程继续
-	}()
-
-	<-done // 主线程等待第一个goroutine完成
-	<-done // 主线程等待第二个goroutine完成
-	fmt.Println("Main goroutine continues.")
-}
-6.使用 sync.Once
-func main() {
-	var once sync.Once
-	done := make(chan struct{})
-
-	go func() {
-		once.Do(func() {
-			i := rand.Intn(10)
-			fmt.Println(i)
-			close(done)
-		})
-	}()
-
-	<-done
-	fmt.Println("Main goroutine continues.")
-}
-```
-
 - 对于 `JsonRes` 结构体中的 `Data` 字段，选择使用 `interface{}` 是为了让这个字段能够灵活地存储不同类型的返回数据。这种设计通常用于通用的 API 响应结构，因为 API 的返回值可能会根据具体的请求内容而不同。
-- ### 使用 `map` 加锁和直接使用 `sync.Map` 的区别：
 
-  #### 1. **设计目的**
-
-  - **`map` 加锁**：手动在普通的 `map` 上通过锁机制（`sync.Mutex` 或 `sync.RWMutex`）实现并发安全。适用于你想要更精细地控制锁的行为，比如读取时可以使用读锁以提高效率。
-  - **`sync.Map`**：专门为并发访问而设计，内置了优化的并发安全机制。特别适用于频繁读写的场景，且减少了手动加锁的复杂度。
-
-  #### 2. **性能**
-
-  - **`map` 加锁**：手动控制锁的开销取决于锁的粒度。使用 `sync.RWMutex` 时，读写性能可以分开优化，读多写少的场景性能可能比 `sync.Map` 更好。但锁的开销仍然存在。
-  - **`sync.Map`**：在某些场景下（尤其是频繁读写的并发场景），`sync.Map` 内部做了多种优化，比如分片锁机制（类似于读写锁的机制）以及无锁的原子操作，因此对于频繁读写的小型对象集合，它的性能可能会优于 `map` 加锁。然而，`sync.Map` 在大量写操作时性能会受到影响，适合读多写少的场景。
-
-  #### 3. **使用难度**
-
-  - **`map` 加锁**：需要开发者显式管理锁的生命周期和范围，容易出现死锁、锁粒度控制不当等问题，需要更加小心地编写代码。
-  - **`sync.Map`**：开发者不需要关心加锁、解锁的问题，代码更加简洁，降低了出错的可能性。
-
-  #### 4. **特性支持**
-
-  - **`map` 加锁**：普通的 `map` 支持所有 `map` 的标准操作（遍历、键值对操作等）。但在遍历时需要小心处理加锁问题，以避免出现竞争条件。
-  - **`sync.Map`**：它的操作接口不同于普通的 `map`，不支持索引访问（`m[key]`），而是通过 `Load`、`Store`、`LoadOrStore` 和 `Delete` 等方法进行操作。此外，它的遍历不保证一致性，也就是说在遍历过程中，其他 goroutine 对 `sync.Map` 的修改可能会影响遍历结果。
-
-  #### 5. **遍历**
-
-  - **`map` 加锁**：在遍历一个普通 `map` 时，需要锁住整个 `map`，否则可能会出现并发写入的问题。使用写锁（`sync.Mutex`）时，所有的并发访问都会被阻塞。
-  - **`sync.Map`**：遍历时不会锁定整个 `map`，但遍历时的快照不保证是最新的内容，因为 `sync.Map` 可能在遍历过程中被其他 goroutine 修改。
-
-  ### 什么时候选择 `map` 加锁或 `sync.Map`？
-
-  - **读多写少的并发场景**：`sync.Map` 会表现得更好，因为它的读操作经过高度优化，适合频繁读取和少量写入的场景。
-  - **写操作频繁或需要更灵活控制锁**：使用带锁的普通 `map` 会更合适。你可以根据读写的比例选择不同的锁策略（如读写锁），从而在写操作较多时提升性能。
 - go里面只有值传递，没有引用传递。比如传一个大型结构体时，实际上是吧指针值拷贝一份过去，而不是把整个
+
 - 闭包特点
+
 - | 第一段代码 | 20, 10 | `defer` 在声明时即捕获了参数的值。两个 `defer` 分别捕获了 `x` 的不同值（10 和 20），并按照逆序执行。 |
   | ---------- | ------ | ------------------------------------------------------------ |
   |            |        |                                                              |
@@ -182,6 +51,14 @@ func main() {
   
 - go run -gcflags="-m" main.go进行逃逸分析
 
+- ### **3. `for` 与 `select` 的对比**
+
+  | **特性**     | **`for` 循环**                       | **`select` 多路复用**              |
+  | ------------ | ------------------------------------ | ---------------------------------- |
+  | **用途**     | 适合单一任务的持续循环，如打印任务。 | 同时监听多个通道或定时任务。       |
+  | **复杂度**   | 简单、代码直观                       | 适用于需要协调多个事件的复杂场景。 |
+  | **并发模型** | 配合独立协程处理其他任务             | 在单个循环内处理所有事件。         |
+  | **灵活性**   | 控制特定逻辑较容易                   | 统一监听多个事件，更灵活。         |
 
 
 
@@ -191,6 +68,39 @@ func main() {
 
 
 
+
+
+
+
+
+
+
+
+## 结构
+
+1.对于一些配置信息等每次都要检查的配置，不应该放在函数体内部，这样每次都会重新改变配置，导致更新不合理，应该放在结构的成员变量中
+
+2.如果需要监听一个管道，有消息来就更新配置，需要将其放在主函数单开一个协程，而且如果使用select要有context .DONE ()保证能够退出，不然可能会出现异常导致该协程不关闭。另外如果改协程在函数内部，会导致每次调用该函数都启动一个协程。
+
+3.理想情况应该将要每个部分需要的协程放在函数内部，将函数放在入口函数中调用，因为协程的生命周期不受创建函数本身的约束，调用函数关闭不影响。
+
+4.在程序设计中，始终明确管理协程的生命周期，避免依赖程序强制退出来清理协程。
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 项目
 
 
 

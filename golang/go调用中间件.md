@@ -373,7 +373,7 @@ func main() {
 	// 稍等片刻以确保操作完成
 	time.Sleep(time.Second * 10)
 }
-
+解析
 // 捕获系统信号
 func signalChan() chan os.Signal {
 	sigChan := make(chan os.Signal, 1)
@@ -541,6 +541,24 @@ func main() {
 }
 
 ```
+
+## **相关问题：**
+
+### 通过 `pubsub.Channel()` 获取到的消息
+
+是 `*redis.Message` 类型的对象，它有以下字段可以访问
+
+1. msg.Channel
+  类型: string
+  含义: 消息来自的频道名称。
+2. msg.Payload
+  类型: string
+  含义: 消息的内容，即发布者发送的实际数据。
+  用途: 这是订阅者关心的主要内容，通过这个字段处理接收到的消息。
+3. msg.Pattern
+  类型: string
+  含义: 如果使用了模式订阅（PSubscribe），这个字段表示匹配到的模式。
+  用途: 当使用通配符订阅多个频道时，可以通过该字段获取匹配的模式。
 
 # PostgreSQL
 

@@ -756,3 +756,114 @@ func main() {
 
 ```
 
+
+
+## 主协程等待子协程的方法
+
+- 可以实现主线程等待子线程信号的几种方法“
+
+```
+1.无缓冲管道
+func main() {
+	wait := make(chan struct{})
+	go func() {
+		for {
+			i := rand.Intn(10)
+			fmt.Println(i)
+			if i == 5 {
+				close(wait)
+				break
+			}
+		}
+	}()
+	<-wait
+}
+2.使用sync.WaitGroup
+func main() {
+	var wg sync.WaitGroup
+	wg.Add(1) // 增加等待计数
+
+	go func() {
+		defer wg.Done() // 减少等待计数
+		i := rand.Intn(10)
+		fmt.Println(i)
+	}()
+
+	wg.Wait() // 主线程等待所有goroutine完成
+	fmt.Println("Main goroutine continues.")
+}
+3.使用 sync.Mutex 和 sync.Cond
+func main() {
+	var mu sync.Mutex
+	cond := sync.NewCond(&mu)
+	done := false
+
+	go func() {
+		mu.Lock()
+		i := rand.Intn(10)
+		fmt.Println(i)
+		done = true
+		cond.Signal() // 通知主线程继续
+		mu.Unlock()
+	}()
+
+	mu.Lock()
+	for !done {
+		cond.Wait() // 主线程等待信号
+	}
+	mu.Unlock()
+
+	fmt.Println("Main goroutine continues.")
+}
+4.使用 context 包
+func main() {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	go func() {
+		i := rand.Intn(10)
+		fmt.Println(i)
+		cancel() // 通知主线程继续
+	}()
+
+	<-ctx.Done() // 主线程等待信号
+	fmt.Println("Main goroutine continues.")
+}
+5.使用带缓冲的通道（Buffered Channel）
+func main() {
+	done := make(chan struct{}, 2) // 缓冲大小为2，允许两个goroutine同时完成
+
+	go func() {
+		i := rand.Intn(10)
+		fmt.Println(i)
+		done <- struct{}{} // 通知主线程继续
+	}()
+
+	go func() {
+		i := rand.Intn(10)
+		fmt.Println(i)
+		done <- struct{}{} // 通知主线程继续
+	}()
+
+	<-done // 主线程等待第一个goroutine完成
+	<-done // 主线程等待第二个goroutine完成
+	fmt.Println("Main goroutine continues.")
+}
+6.使用 sync.Once
+func main() {
+	var once sync.Once
+	done := make(chan struct{})
+
+	go func() {
+		once.Do(func() {
+			i := rand.Intn(10)
+			fmt.Println(i)
+			close(done)
+		})
+	}()
+
+	<-done
+	fmt.Println("Main goroutine continues.")
+}
+```
+
