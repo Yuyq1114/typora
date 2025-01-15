@@ -582,6 +582,14 @@ docker run -d --name mysql-container \
 
 ### kafka
 
+**使用kraft和apach的镜像**
+
+docker run -d    --name broker -p 9092:9092   -e KAFKA_NODE_ID=1   -e KAFKA_PROCESS_ROLES=broker,controller   -e KAFKA_LISTENERS=PLAINTEXT://0.0.0.0:9092,CONTROLLER://:9093   -e KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://**外网ip**:9092   -e KAFKA_CONTROLLER_LISTENER_NAMES=CONTROLLER   -e KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT   -e KAFKA_CONTROLLER_QUORUM_VOTERS=1@localhost:9093   -e KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1   -e KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR=1   -e KAFKA_TRANSACTION_STATE_LOG_MIN_ISR=1   -e KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS=0   -e KAFKA_NUM_PARTITIONS=3   apache/kafka:latest
+
+
+
+**使用zookeeper可能有问题**
+
 docker run -d \
   --name zookeeper \
   -p 2181:2181 \
@@ -597,6 +605,8 @@ docker run -d \
   -e KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://120.46.80.186:9092 \
   -e KAFKA_LISTENERS=PLAINTEXT://0.0.0.0:9092 \
   wurstmeister/kafka:latest
+
+
 
 
 
@@ -666,9 +676,8 @@ goland连接时只需要给出ip和一个主节点的端口就可以，模式选
 
 
 docker run -d \
-  --name redis-server \
-  -p 6379:6379 \
-  redis
+  --name redis-node1 \
+  -p 6379:6379 redis  \--requirepass mypassword
 
 **集群test**
 
@@ -686,7 +695,9 @@ docker run -d --name redis-node-6 --net host --privileged=true  -v /data/redis/s
 
 docker exec -it redis-node-1 /bin/bash
 
-redis-cli --cluster create 120.46.80.186:7001 120.46.80.186:7002 120.46.80.186:7003 118.178.127.89:7004 120.46.80.186:7005 120.46.80.186:7006 --cluster-replicas 1 -a mypassword
+redis-cli --cluster create 117.50.85.130:7001 117.50.85.130:7002 117.50.85.130:7003 117.50.85.130:7004 117.50.85.130:7005 117.50.85.130:7006 --cluster-replicas 1 -a mypassword
+
+redis-cli -h 127.0.0.1 -p 7001 -a mypassword
 
 
 
