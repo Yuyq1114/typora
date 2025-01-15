@@ -1,3 +1,13 @@
+
+
+本节所有内容以不在更新使用，新内容同步到
+
+https://github.com/Yuyq1114/componentsUse
+
+此项目中，该项目更新大部分组件的使用并且在完整的项目中便于学习。
+
+
+
 # mysql
 
 ```
@@ -549,16 +559,16 @@ func main() {
 是 `*redis.Message` 类型的对象，它有以下字段可以访问
 
 1. msg.Channel
-  类型: string
-  含义: 消息来自的频道名称。
+    类型: string
+    含义: 消息来自的频道名称。
 2. msg.Payload
-  类型: string
-  含义: 消息的内容，即发布者发送的实际数据。
-  用途: 这是订阅者关心的主要内容，通过这个字段处理接收到的消息。
+    类型: string
+    含义: 消息的内容，即发布者发送的实际数据。
+    用途: 这是订阅者关心的主要内容，通过这个字段处理接收到的消息。
 3. msg.Pattern
-  类型: string
-  含义: 如果使用了模式订阅（PSubscribe），这个字段表示匹配到的模式。
-  用途: 当使用通配符订阅多个频道时，可以通过该字段获取匹配的模式。
+    类型: string
+    含义: 如果使用了模式订阅（PSubscribe），这个字段表示匹配到的模式。
+    用途: 当使用通配符订阅多个频道时，可以通过该字段获取匹配的模式。
 
 # PostgreSQL
 
@@ -1448,5 +1458,206 @@ func main() {
 
 
 
+# nacos
+
+##  注册nacos
 
 
+
+	package main
+	
+	import (
+		"fmt"
+		"log"
+		"github.com/nacos-group/nacos-sdk-go/v2/clients"
+		"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
+		"github.com/nacos-group/nacos-sdk-go/v2/vo"
+	)
+	
+	func main() {
+		// 配置 Nacos 客户端
+		clientConfig := constant.NewClientConfig(
+			constant.WithTimeoutMs(5000),
+			constant.WithNamespaceId("public"),  // 默认为 public
+			constant.WithAccessKey("your-access-key"),
+			constant.WithSecretKey("your-secret-key"),
+		)
+	// 创建 Nacos 服务发现客户端
+	serverConfig := []constant.ServerConfig{
+		{
+			IpAddr: "127.0.0.1",
+			Port:   8848,
+		},
+	}
+	
+	client, err := clients.NewNamingClient(
+		vo.NacosClientParam{
+			ClientConfig:  clientConfig,
+			ServerConfigs: serverConfig,
+		},
+	)
+	if err != nil {
+		log.Fatalf("创建 Nacos 客户端失败: %v", err)
+	}
+	
+	// 获取服务列表
+	resp, err := client.GetServicesList(vo.GetServicesParam{
+		PageSize: 10,
+		PageNo:   1,
+	})
+	if err != nil {
+		log.Fatalf("获取服务列表失败: %v", err)
+	}
+	
+	// 输出服务列表
+	fmt.Println("服务列表：", resp)
+	}
+## 注册服务
+
+
+
+	package main
+	
+	import (
+		"fmt"
+		"log"
+		"github.com/nacos-group/nacos-sdk-go/v2/clients"
+		"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
+		"github.com/nacos-group/nacos-sdk-go/v2/vo"
+	)
+	
+	func main() {
+		// 配置 Nacos 客户端
+		clientConfig := constant.NewClientConfig(
+			constant.WithTimeoutMs(5000),
+			constant.WithNamespaceId("public"),
+		)
+	// 创建 Nacos 服务注册客户端
+	serverConfig := []constant.ServerConfig{
+		{
+			IpAddr: "127.0.0.1",
+			Port:   8848,
+		},
+	}
+	
+	client, err := clients.NewNamingClient(
+		vo.NacosClientParam{
+			ClientConfig:  clientConfig,
+			ServerConfigs: serverConfig,
+		},
+	)
+	if err != nil {
+		log.Fatalf("创建 Nacos 客户端失败: %v", err)
+	}
+	
+	// 注册服务
+	registerParam := vo.RegisterInstanceParam{
+		ServiceName: "example-service", // 服务名
+		Ip:          "127.0.0.1",       // 服务所在的 IP 地址
+		Port:        8080,              // 服务所在的端口
+	}
+	
+	err = client.RegisterInstance(registerParam)
+	if err != nil {
+		log.Fatalf("注册服务失败: %v", err)
+	}
+	
+	fmt.Println("服务注册成功")
+	}
+### 服务发现
+
+
+
+	package main
+	
+	import (
+		"fmt"
+		"log"
+		"github.com/nacos-group/nacos-sdk-go/v2/clients"
+		"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
+		"github.com/nacos-group/nacos-sdk-go/v2/vo"
+	)
+	
+	func main() {
+		// 配置 Nacos 客户端
+		clientConfig := constant.NewClientConfig(
+			constant.WithTimeoutMs(5000),
+			constant.WithNamespaceId("public"),
+		)
+	}// 创建 Nacos 服务发现客户端
+	serverConfig := []constant.ServerConfig{
+		{
+			IpAddr: "127.0.0.1",
+			Port:   8848,
+		},
+	}
+	
+	client, err := clients.NewNamingClient(
+		vo.NacosClientParam{
+			ClientConfig:  clientConfig,
+			ServerConfigs: serverConfig,
+		},
+	)
+	if err != nil {
+		log.Fatalf("创建 Nacos 客户端失败: %v", err)
+	}
+	
+	// 获取服务实例
+	instance, err := client.SelectOneHealthyInstance(vo.SelectOneHealthInstanceParam{
+		ServiceName: "example-service", // 服务名
+	})
+	if err != nil {
+		log.Fatalf("获取服务实例失败: %v", err)
+	}
+	
+	fmt.Printf("发现服务实例: %+v\n", instance)
+	}
+## 动态配置
+
+
+
+	package main
+	
+	import (
+		"fmt"
+		"log"
+		"github.com/nacos-group/nacos-sdk-go/v2/clients"
+		"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
+		"github.com/nacos-group/nacos-sdk-go/v2/vo"
+	)
+	
+	func main() {
+		// 配置 Nacos 客户端
+		clientConfig := constant.NewClientConfig(
+			constant.WithTimeoutMs(5000),
+			constant.WithNamespaceId("public"),
+		)
+	// 创建 Nacos 配置客户端
+	serverConfig := []constant.ServerConfig{
+		{
+			IpAddr: "127.0.0.1",
+			Port:   8848,
+		},
+	}
+	
+	client, err := clients.NewConfigClient(
+		vo.NacosClientParam{
+			ClientConfig:  clientConfig,
+			ServerConfigs: serverConfig,
+		},
+	)
+	if err != nil {
+		log.Fatalf("创建 Nacos 客户端失败: %v", err)
+	}
+	
+	// 获取配置
+	content, err := client.GetConfig(vo.ConfigParam{
+		DataId: "example-data-id", // 配置项的 ID
+		Group:  "DEFAULT_GROUP",    // 配置的组名
+	})
+	if err != nil {
+		log.Fatalf("获取配置失败: %v", err)
+	}
+	
+	fmt.Printf("配置内容：%s\n", content)
+	}

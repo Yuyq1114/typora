@@ -340,7 +340,77 @@ Docker 根据容器的生命周期提供了一些基本操作：
 
 ##   实际命令
 
+docker start $(docker ps -a | awk '{ print $1}' | tail -n +2)//开启
 
+docker stop $(docker ps -a | awk '{ print $1}' | tail -n +2)//关闭所有容器
+
+docker rm $(docker ps -a | awk '{ print $1}' | tail -n +2)//删除所有容器
+
+docker-compose down //停止且删除
+
+docker exec -it **podname** bash// 进入bash
+
+redis-cli -c -h ip -p 7001 -a mypassword cluster nodes//查看集群状态
+
+redis-cli -c -h 192.168.1.2 -p 6379 -a mypassword cluster nodes //获取集群结点
+
+redis-cli -h 118.178.127.89 -p 7001 -a mypassword PING //ping结点
+
+redis-cli -c -h 118.178.127.89 -p 7001 -a mypassword cluster nodes
+
+118.178.127.89
+
+## 安装docker
+
+yum update -y
+
+yum remove docker \
+                docker-client \
+                docker-client-latest \
+                docker-common \
+                docker-latest \
+                docker-latest-logrotate \
+                docker-logrotate \
+                docker-engine
+
+yum install -y yum-utils device-mapper-persistent-data lvm2
+
+yum-config-manager --add-repo http://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo
+
+yum install -y docker-ce docker-ce-cli containerd.io
+
+systemctl start docker
+
+systemctl enable docker
+
+docker --version
+
+//换源
+
+vim /etc/docker/daemon.json
+
+{
+  "registry-mirrors": [
+    "https://docker.registry.cyou",
+    "https://docker-cf.registry.cyou",
+    "https://dockercf.jsdelivr.fyi",
+    "https://docker.jsdelivr.fyi",
+    "https://dockertest.jsdelivr.fyi",
+    "https://mirror.aliyuncs.com",
+    "https://dockerproxy.com",
+    "https://mirror.baidubce.com",
+    "https://docker.m.daocloud.io",
+    "https://docker.nju.edu.cn",
+    "https://docker.mirrors.sjtug.sjtu.edu.cn",
+    "https://docker.mirrors.ustc.edu.cn",
+    "https://mirror.iscas.ac.cn",
+    "https://docker.rainbond.cc"
+  ]
+}
+
+systemctl restart docker
+
+docker run hello-world
 
 
 
@@ -462,15 +532,73 @@ Docker 根据容器的生命周期提供了一些基本操作：
 
 ## docker配置各个中间件的参数
 
+### 换源
+
+vim /etc/docker/daemon.json
+
+```json
+{
+    "registry-mirrors" : [
+    	"https://registry.docker-cn.com",
+    	"http://hub-mirror.c.163.com",
+    	"https://docker.mirrors.ustc.edu.cn",
+    	"https://cr.console.aliyun.com",
+    	"https://mirror.ccs.tencentyun.com"
+  ]
+}
+```
+
+重启
+
+### 离线安装镜像
+
+docker save -o dorisfe.tar apache/doris:doris-fe-2.1.7
+
+docker save -o dorisbe.tar apache/doris:doris-be-2.1.7
+
+echo %cd%
+
+docker load -i dorisfe.tar
+
+
+
+
+
 ### mysql
 
 **端口映射**3306
 
 **环境变量**MYSQL_ROOT_PASSWORD
 
+docker run -d --name mysql-container \
+  -e MYSQL_ROOT_PASSWORD=mypassword \
+  -e MYSQL_DATABASE=mydatabase \
+  -e MYSQL_USER=myuser \
+  -e MYSQL_PASSWORD=mypassword \
+  -p 3306:3306 \
+  mysql:8.0
+
 
 
 ### kafka
+
+docker run -d \
+  --name zookeeper \
+  -p 2181:2181 \
+  zookeeper:latest
+
+
+
+docker run -d \
+  --name kafka \
+  -p 9092:9092 \
+  -e KAFKA_BROKER_ID=1 \
+  -e KAFKA_ZOOKEEPER_CONNECT=120.46.80.186:2181 \
+  -e KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://120.46.80.186:9092 \
+  -e KAFKA_LISTENERS=PLAINTEXT://0.0.0.0:9092 \
+  wurstmeister/kafka:latest
+
+
 
 **拉取apache/kafka:latest,不要拉取bitnami**
 
@@ -527,11 +655,95 @@ docker rm -f broker
 
 ### redis
 
+goland连接时只需要给出ip和一个主节点的端口就可以，模式选cluster
+
 **端口映射**6379
 
 进入后redis-cli进入客户端
 
 测试发送ping 收到pong
+
+
+
+docker run -d \
+  --name redis-server \
+  -p 6379:6379 \
+  redis
+
+**集群test**
+
+docker run -d --name redis-node-1 --net host --privileged=true  -v /data/redis/share/redis-node-1:/data redis:latest  --cluster-enabled yes  --appendonly yes --port 7001  --requirepass mypassword
+
+docker run -d --name redis-node-2 --net host --privileged=true  -v /data/redis/share/redis-node-2:/data redis:latest  --cluster-enabled yes  --appendonly yes --port 7002  --requirepass mypassword
+
+docker run -d --name redis-node-3 --net host --privileged=true  -v /data/redis/share/redis-node-3:/data redis:latest  --cluster-enabled yes  --appendonly yes --port 7003  --requirepass mypassword
+
+docker run -d --name redis-node-4 --net host --privileged=true  -v /data/redis/share/redis-node-4:/data redis:latest  --cluster-enabled yes  --appendonly yes --port 7004  --requirepass mypassword
+
+docker run -d --name redis-node-5 --net host --privileged=true  -v /data/redis/share/redis-node-5:/data redis:latest  --cluster-enabled yes  --appendonly yes --port 7005  --requirepass mypassword
+
+docker run -d --name redis-node-6 --net host --privileged=true  -v /data/redis/share/redis-node-6:/data redis:latest  --cluster-enabled yes  --appendonly yes --port 7006  --requirepass mypassword
+
+docker exec -it redis-node-1 /bin/bash
+
+redis-cli --cluster create 120.46.80.186:7001 120.46.80.186:7002 120.46.80.186:7003 118.178.127.89:7004 120.46.80.186:7005 120.46.80.186:7006 --cluster-replicas 1 -a mypassword
+
+
+
+**集群支持**
+
+docker network create --driver bridge redis-cluster-network
+
+```
+version: "3.3"
+services:
+  redis-node-1:
+    image: redis:latest
+    container_name: redis-node-1
+    command: ["redis-server", "--requirepass", "mypassword", "--cluster-enabled", "yes", "--cluster-config-file", "nodes.conf", "--cluster-node-timeout", "5000", "--appendonly", "yes"]
+    ports:
+      - "7001:6379"
+    volumes:
+      - redis-node-1-data:/data
+    networks:
+      - redis-cluster-network
+
+  redis-node-2:
+    image: redis:latest
+    container_name: redis-node-2
+    command: ["redis-server", "--requirepass", "mypassword", "--cluster-enabled", "yes", "--cluster-config-file", "nodes.conf", "--cluster-node-timeout", "5000", "--appendonly", "yes"]
+    ports:
+      - "7002:6379"
+    volumes:
+      - redis-node-2-data:/data
+    networks:
+      - redis-cluster-network
+
+  redis-node-3:
+    image: redis:latest
+    container_name: redis-node-3
+    command: ["redis-server", "--requirepass", "mypassword", "--cluster-enabled", "yes", "--cluster-config-file", "nodes.conf", "--cluster-node-timeout", "5000", "--appendonly", "yes"]
+    ports:
+      - "7003:6379"
+    volumes:
+      - redis-node-3-data:/data
+    networks:
+      - redis-cluster-network
+
+volumes:
+  redis-node-1-data:
+  redis-node-2-data:
+  redis-node-3-data:
+
+networks:
+  redis-cluster-network:
+    driver: bridge
+
+```
+
+docker-compose up -d
+
+docker exec -it redis-node-1 redis-cli -a mypassword -h redis-node-2 -p 6379 ping
 
 
 
@@ -541,9 +753,67 @@ docker rm -f broker
 
 **环境变量**POSTGRES_PASSWORD
 
+docker run -d \
+  --name my-postgres \
+  -e POSTGRES_USER=myuser \
+  -e POSTGRES_PASSWORD=mypassword \
+  -e POSTGRES_DB=mydatabase \
+  -p 5432:5432 \
+  postgres
+
 
 
 ### doris
+
+**//单结点模式**
+
+https://github.com/apache/doris/blob/master/docker/runtime/docker-compose-demo/build-cluster/rum-command/3fe_3be.sh
+
+sysctl -w vm.max_map_count=2000000
+
+docker network create --driver bridge --subnet=172.20.80.0/24 doris-network
+docker run -itd \
+    --name=fe-01 \
+    --env FE_SERVERS="fe1:172.20.80.2:9010,fe2:172.20.80.3:9010,fe3:172.20.80.4:9010" \
+    --env FE_ID=1 \
+    -p 8031:8030 \
+    -p 9031:9030 \
+    -v /data/fe-01/doris-meta:/opt/apache-doris/fe/doris-meta \
+    -v /data/fe-01/log:/opt/apache-doris/fe/log \
+    --network=doris-network \
+    --ip=172.20.80.2 \
+    apache/doris:doris-fe-2.1.7
+
+
+
+docker run -itd \
+    --name=be-01 \
+    --env FE_SERVERS="fe1:172.20.80.2:9010,fe2:172.20.80.3:9010,fe3:172.20.80.4:9010" \
+    --env BE_ADDR="172.20.80.5:9050" \
+    -p 8041:8040 \
+    -v /data/be-01/storage:/opt/apache-doris/be/storage \
+    -v /data/be-01/log:/opt/apache-doris/be/log \
+    --network=doris-network \
+    --ip=172.20.80.5 \
+    apache/doris:doris-be-2.1.7
+
+
+
+
+
+**修改密码**
+
+docker exec -it fe-01 bash
+
+mysql -h 127.0.0.1 -P 9030 -u root -p
+
+SET PASSWORD FOR 'root' = PASSWORD('mypassword');
+
+SET PASSWORD FOR 'admin' = PASSWORD('mypassword');
+
+**访问**
+
+http://ip:8030/login
 
 
 
@@ -563,3 +833,19 @@ guest**只能本地**
 
 访问地址
 localhost:15672，这里的用户名和密码默认都是guest
+
+
+
+### nacos
+
+docker run -d \
+  --name nacos \
+  -e MODE=standalone \
+  -p 8848:8848 \
+  nacos/nacos-server:latest
+
+
+
+
+
+http://120.26.84.229:8848/nacos/#/login
