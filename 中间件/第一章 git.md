@@ -264,8 +264,10 @@ git push origin branch_name
 
 #### fetch
 
-- 获取某个远程仓库（例如 `origin`）的更新：
+- 获取某个远程仓库（例如 `origin`）的更新：，和pull区别在于只会合并到暂存区，不修改本地
 
+  
+  
   ```
   git fetch origin
   ```

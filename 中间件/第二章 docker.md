@@ -772,38 +772,40 @@ https://github.com/apache/doris/blob/master/docker/runtime/docker-compose-demo/b
 sysctl -w vm.max_map_count=2000000
 
 docker network create --driver bridge --subnet=172.20.80.0/24 doris-network
-docker run -itd \
-    --name=fe-01 \
-    --env FE_SERVERS="fe1:172.20.80.2:9010,fe2:172.20.80.3:9010,fe3:172.20.80.4:9010" \
-    --env FE_ID=1 \
-    -p 8031:8030 \
-    -p 9031:9030 \
-    -v /data/fe-01/doris-meta:/opt/apache-doris/fe/doris-meta \
-    -v /data/fe-01/log:/opt/apache-doris/fe/log \
-    --network=doris-network \
-    --ip=172.20.80.2 \
-    apache/doris:doris-fe-2.1.7
 
 
 
 docker run -itd \
-    --name=be-01 \
-    --env FE_SERVERS="fe1:172.20.80.2:9010,fe2:172.20.80.3:9010,fe3:172.20.80.4:9010" \
-    --env BE_ADDR="172.20.80.5:9050" \
-    -p 8041:8040 \
-    -v /data/be-01/storage:/opt/apache-doris/be/storage \
-    -v /data/be-01/log:/opt/apache-doris/be/log \
-    --network=doris-network \
-    --ip=172.20.80.5 \
-    apache/doris:doris-be-2.1.7
+--name=fe \
+--env FE_SERVERS="fe1:172.20.80.2:9010" \
+--env FE_ID=1 \
+-p 8030:8030 \
+-p 9030:9030 \
+-v /data/fe/doris-meta:/opt/apache-doris/fe/doris-meta \
+-v /data/fe/log:/opt/apache-doris/fe/log \
+--network=doris-network \
+--ip=172.20.80.2 \
+apache/doris:doris-fe-2.1.7
 
 
+
+docker run -itd \
+--name=be \
+--env FE_SERVERS="fe1:172.20.80.2:9010" \
+--env BE_ADDR="172.20.80.3:9050" \
+-p 8040:8040 \
+-v /data/be/storage:/opt/apache-doris/be/storage \
+-v /data/be/conf:/opt/apache-doris/be/conf \
+-v /data/be/log:/opt/apache-doris/be/log \
+--network=doris-network \
+--ip=172.20.80.3 \
+apache/doris:doris-be-2.1.7
 
 
 
 **修改密码**
 
-docker exec -it fe-01 bash
+docker exec -it fe bash
 
 mysql -h 127.0.0.1 -P 9030 -u root -p
 

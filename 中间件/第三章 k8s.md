@@ -427,6 +427,7 @@ sudo ctr images import kafka/kafka.tar
 
    ```
    kubectl exec -it POD_NAME -n <namaspace> -- /bin/bash
+   kubectl exec -it POD_NAME -n <namaspace> -- /bin/sh //也可能是
    ```
 
    - 在指定 Pod 内部启动一个交互式 Shell。

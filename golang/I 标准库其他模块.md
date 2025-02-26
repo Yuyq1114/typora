@@ -751,180 +751,212 @@ func main() {
 
 ## 八 Context包
 
-`context` 包是 Go 语言标准库中用于上下文管理的包，它提供了处理请求范围内的截止时间、取消信号和请求作用域内的键值对数据的能力。`context` 包广泛用于需要处理超时、取消、并行操作等场景中，如 Web 服务器、数据库操作等。
+### 1. **背景与设计目的**
 
-### 核心概念
+Go 的 `context` 包是为了解决以下问题而设计的：
 
-`context` 包主要有四种类型的上下文：
+- **控制协程的生命周期**：在多协程环境下，能够优雅地通知某些协程结束。
+- **超时与取消**：支持设置超时或取消信号，以避免协程无限运行或被挂起。
+- **传递请求范围内的数据**：通过 `context` 可以在线程之间传递少量上下文信息，比如用户 ID、请求标识等。
 
-1. `context.Background()`
-2. `context.TODO()`
-3. `context.WithCancel(parent Context)`
-4. `context.WithTimeout(parent Context, timeout)`
-5. `context.WithDeadline(parent Context, deadline)`
-6. `context.WithValue(parent Context, key, val)`
+------
 
-每个上下文都有一个 `Done` 通道，当上下文被取消或超时时，该通道会关闭。
+### 2. **`context` 的核心接口**
 
-### 基本用法
+`context` 是一个接口，其定义如下：
 
-#### 1. `context.Background()`
+```
+type Context interface {
+    Deadline() (deadline time.Time, ok bool) // 返回上下文被取消的时间
+    Done() <-chan struct{}                  // 返回一个通道，当上下文被取消或超时时关闭
+    Err() error                             // 返回上下文结束的原因（取消或超时）
+    Value(key any) any                      // 获取上下文中存储的值
+}
+```
 
-这是一个空的上下文，通常作为其他上下文的根上下文使用。
+#### **主要方法解析**
+
+1. **`Deadline`**：用于获取上下文的截止时间。超出截止时间，`context` 会自动取消。
+2. **`Done`**：返回一个只读通道，表示上下文的取消信号。当通道关闭时，所有依赖此 `context` 的操作都应该停止。
+3. **`Err`**：当 `Done` 通道关闭时，可以通过此方法判断取消的原因（如超时、主动取消等）。
+4. **`Value`**：用来存储和获取与上下文相关的值，适合存放一些与请求相关的小型全局变量。
+
+------
+
+### 3. **创建 `context` 的方式**
+
+`context` 包中提供了以下四种方法来生成 `context`：
+
+#### (1) `context.Background()`
+
+- **用途**：返回一个空的上下文，通常作为顶层父上下文使用。
+- **特点**：不会被取消，也没有超时时间，适合作为根上下文。
 
 ```
 ctx := context.Background()
 ```
 
-#### 2. `context.TODO()`
+------
 
-表示还不知道要使用什么上下文，在开发过程中占位使用。
+#### (2) `context.TODO()`
+
+- **用途**：返回一个空的上下文，表示当前不知道要使用什么 `context`。
+- **特点**：通常在代码未完善时作为占位符，待确定后再替换为适当的 `context`。
 
 ```
 ctx := context.TODO()
 ```
 
-#### 3. `context.WithCancel(parent Context)`
+------
 
-返回一个新的 `Context` 和一个 `CancelFunc`，当调用 `CancelFunc` 时，`Done` 通道会被关闭。
+#### (3) `context.WithCancel(parent)`
+
+- **用途**：创建一个可取消的上下文。
+- **特点**：返回的 `context` 可以通过调用 `cancel` 函数主动取消。
 
 ```
 ctx, cancel := context.WithCancel(context.Background())
-defer cancel() // 确保函数退出时调用
+defer cancel() // 确保在适当的地方调用取消函数
 
-// 运行一个 goroutine，在某个条件下取消上下文
 go func() {
-    time.Sleep(2 * time.Second)
-    cancel()
+    <-ctx.Done() // 监听取消信号
+    fmt.Println("Context canceled")
 }()
-
-select {
-case <-ctx.Done():
-    fmt.Println("Context cancelled")
-}
 ```
 
-#### 4. `context.WithTimeout(parent Context, timeout)`
+------
 
-返回一个新的 `Context` 和一个 `CancelFunc`，当指定的超时时间到达时，`Done` 通道会被关闭。
+#### (4) `context.WithTimeout(parent, duration)`
+
+- **用途**：创建一个具有超时时间的上下文。
+- **特点**：超时后，`context` 会自动取消，并关闭其 `Done` 通道。
 
 ```
-ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 defer cancel()
 
 select {
+case <-time.After(6 * time.Second):
+    fmt.Println("Task completed")
 case <-ctx.Done():
-    fmt.Println("Context timed out")
+    fmt.Println("Context timeout:", ctx.Err()) // 超时后返回错误
 }
 ```
 
-#### 5. `context.WithDeadline(parent Context, deadline)`
+------
 
-返回一个新的 `Context` 和一个 `CancelFunc`，当指定的截止时间到达时，`Done` 通道会被关闭。
+#### (5) `context.WithDeadline(parent, deadline)`
+
+- **用途**：类似于 `WithTimeout`，但允许指定具体的截止时间。
+- **特点**：适合需要精确控制时间点的场景。
 
 ```
-deadline := time.Now().Add(2 * time.Second)
+deadline := time.Now().Add(5 * time.Second)
 ctx, cancel := context.WithDeadline(context.Background(), deadline)
 defer cancel()
-
-select {
-case <-ctx.Done():
-    fmt.Println("Context deadline reached")
-}
 ```
 
-#### 6. `context.WithValue(parent Context, key, val)`
+------
 
-返回一个新的 `Context`，它携带了一个键值对数据。用于在上下文中传递请求作用域内的数据。
+#### (6) `context.WithValue(parent, key, value)`
 
-```
-type key string
-
-ctx := context.WithValue(context.Background(), key("userID"), 123)
-
-func doSomething(ctx context.Context) {
-    if v := ctx.Value(key("userID")); v != nil {
-        fmt.Println("userID:", v)
-    }
-}
-
-doSomething(ctx)
-```
-
-### 应用场景
-
-#### 1. 网络请求处理
-
-在 Web 服务器中，可以使用 `context` 在处理 HTTP 请求时设置超时和取消逻辑。
+- **用途**：在上下文中存储一个键值对。
+- **特点**：可以传递一些少量的请求范围内的元信息，但不适合存储大量数据。
 
 ```
-func handler(w http.ResponseWriter, r *http.Request) {
-    ctx := r.Context()
+ctx := context.WithValue(context.Background(), "userID", 12345)
+
+userID := ctx.Value("userID").(int) // 获取存储的值
+fmt.Println("UserID:", userID)
+```
+
+> **注意**：`context.Value` 不应该用于传递业务逻辑中的主要数据，只适合传递少量元数据。
+
+------
+
+### 4. **常见应用场景**
+
+#### (1) **超时控制**
+
+避免某些操作（如网络请求、数据库查询）无限等待，通过设置超时来控制任务的执行时间。
+
+```
+func fetchData(ctx context.Context) {
     select {
-    case <-time.After(5 * time.Second):
-        fmt.Fprintln(w, "Hello, World!")
+    case <-time.After(3 * time.Second):
+        fmt.Println("Data fetched")
     case <-ctx.Done():
-        fmt.Fprintln(w, "Request cancelled")
+        fmt.Println("Operation canceled:", ctx.Err())
     }
 }
-```
-
-#### 2. 数据库操作
-
-在数据库操作中，可以使用 `context` 来管理操作的超时和取消。
-
-```
-func queryDB(ctx context.Context, db *sql.DB) {
-    rows, err := db.QueryContext(ctx, "SELECT * FROM table")
-    if err != nil {
-        log.Println("Query failed:", err)
-        return
-    }
-    defer rows.Close()
-    // 处理查询结果
-}
-```
-
-### 使用注意事项
-
-1. **不要在结构体中存储 `Context`**：上下文应该作为函数的第一个参数传递。
-2. **避免滥用 `context.WithValue`**：上下文主要用于控制信号传递，不应该用来传递大量数据。
-3. **及时调用 `CancelFunc`**：当使用 `context.WithCancel`、`context.WithTimeout` 或 `context.WithDeadline` 创建上下文时，确保在适当的时候调用返回的 `CancelFunc` 以释放资源。
-
-### 示例项目
-
-以下是一个简单的示例项目，演示了如何使用 `context` 包管理 HTTP 请求的超时和取消。
-
-```
-package main
-
-import (
-    "context"
-    "fmt"
-    "net/http"
-    "time"
-)
 
 func main() {
-    http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-        ctx := r.Context()
-        ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
-        defer cancel()
+    ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+    defer cancel()
 
-        select {
-        case <-time.After(5 * time.Second):
-            fmt.Fprintln(w, "Hello, World!")
-        case <-ctx.Done():
-            http.Error(w, ctx.Err().Error(), http.StatusInternalServerError)
-        }
-    })
-
-    fmt.Println("Starting server at :8080")
-    http.ListenAndServe(":8080", nil)
+    fetchData(ctx)
 }
 ```
 
-在这个示例中，服务器在处理每个请求时都会设置一个 2 秒的超时时间。如果请求处理时间超过 2 秒，`ctx.Done()` 将会触发，取消请求处理并返回超时错误。
+------
+
+#### (2) **协程间的取消控制**
+
+```
+func worker(ctx context.Context, id int) {
+    for {
+        select {
+        case <-ctx.Done():
+            fmt.Printf("Worker %d stopped\n", id)
+            return
+        default:
+            fmt.Printf("Worker %d working...\n", id)
+            time.Sleep(1 * time.Second)
+        }
+    }
+}
+
+func main() {
+    ctx, cancel := context.WithCancel(context.Background())
+
+    for i := 0; i < 3; i++ {
+        go worker(ctx, i)
+    }
+
+    time.Sleep(3 * time.Second)
+    cancel() // 通知所有协程停止
+    time.Sleep(1 * time.Second)
+}
+```
+
+------
+
+#### (3) **传递请求范围数据**
+
+在处理 HTTP 请求时，可以用 `context` 将请求范围内的元数据传递给下游函数。
+
+```
+func handler(ctx context.Context) {
+    userID := ctx.Value("userID").(int)
+    fmt.Println("Handling request for user:", userID)
+}
+
+func main() {
+    ctx := context.WithValue(context.Background(), "userID", 42)
+    handler(ctx)
+}
+```
+
+------
+
+### 5. **注意事项**
+
+1. **及时调用 `cancel`**：
+   - 当使用 `WithCancel`、`WithTimeout` 或 `WithDeadline` 时，一定要确保调用对应的 `cancel` 函数以释放资源。
+2. **不要滥用 `WithValue`**：
+   - `context` 是用于传递上下文信息，而不是数据存储工具。避免在上下文中传递过多的数据。
+3. **嵌套上下文的管理**：
+   - 上下文可以嵌套，子上下文的取消会级联到父上下文，但父上下文的取消会传播到所有子上下文。
 
 ## 九 log包
 
