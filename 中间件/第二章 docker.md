@@ -340,6 +340,47 @@ Docker 根据容器的生命周期提供了一些基本操作：
 
 ##   实际命令
 
+docker images
+
+docker rmi
+
+docker container prune
+
+docker load -i go-log-engine.tar
+
+docker build -t my-arm64-base .
+
+docker cp container_id:/container/path/to/file   /localpath/
+
+kubectl cp namespace/podName:container_path/filename  /localpsth,若要复制全部路径，使用/结尾
+
+docker run -d --name my-container nginx
+
+
+
+**使用buildx跨架构**
+
+docker buildx create --use
+
+docker buildx build --platform linux/arm64 -t my-app:arm64 .
+
+docker buildx build --platform linux/arm64 -t my-app:arm64 . --output type=docker
+docker save -o my-app-arm64.tar my-app:arm64
+
+**amd拉取arm镜像**
+
+docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+
+docker buildx create --use
+docker buildx inspect --bootstrap
+docker pull --platform linux/arm64 myapp:latest
+
+
+
+
+
+**其他**
+
 docker start $(docker ps -a | awk '{ print $1}' | tail -n +2)//开启
 
 docker stop $(docker ps -a | awk '{ print $1}' | tail -n +2)//关闭所有容器

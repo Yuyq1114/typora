@@ -1,8 +1,229 @@
 # 任务表述 1.1： 设计对 AWS 资源的安全访问
 
+IAM 访问控制、跨账户权限、MFA、多账户安全策略（AWS Control Tower）
 
+## 🧩 一、IAM 访问控制（Identity and Access Management）
 
+**IAM（AWS Identity and Access Management）** 是 AWS 安全的基石，主要用于控制**谁可以访问 AWS 资源、能访问哪些资源、以及能执行什么操作**。
 
+### 🔹 基本概念
+
+- **主体（Principal）**：可以是用户、角色、组或服务账户。
+- **资源（Resource）**：例如 S3 Bucket、EC2 实例、RDS 数据库。
+- **操作（Action）**：例如 `s3:ListBucket` 或 `ec2:StartInstances`。
+- **策略（Policy）**：定义允许或拒绝的权限的 JSON 文档。
+
+------
+
+### 🔹 策略类型
+
+1. **身份策略（Identity-based Policy）**
+    附加到用户、组或角色上，用于定义他们可以访问哪些资源。
+
+   ```
+   {
+     "Effect": "Allow",
+     "Action": ["s3:ListBucket", "s3:GetObject"],
+     "Resource": ["arn:aws:s3:::mybucket/*"]
+   }
+   ```
+
+2. **资源策略（Resource-based Policy）**
+    直接附加到资源上，例如 S3 bucket policy 或 Lambda 函数策略。
+    常用于 **跨账户访问**。
+
+3. **权限边界（Permission Boundaries）**
+    限制身份策略能授予的最大权限范围。
+
+4. **服务控制策略（SCP）**（见下文 AWS Control Tower 部分）
+    用于组织级别的全局权限约束。
+
+------
+
+### 🔹 最佳实践
+
+✅ 最小权限原则（Principle of Least Privilege）
+ ✅ 使用角色（Role）代替长期密钥的用户
+ ✅ 使用 IAM Policy Simulator 验证策略效果
+ ✅ 启用 CloudTrail 审计访问日志
+
+------
+
+## 🔁 二、跨账户权限（Cross-Account Access）
+
+企业往往有多个 AWS 账户，例如：
+
+- **开发账户（Dev）**
+- **生产账户（Prod）**
+- **安全审计账户（Security）**
+
+为了安全隔离，需要**安全地跨账户访问资源**，而不共享长期凭证。
+
+------
+
+### 🔹 实现方式 1：基于 IAM 角色信任策略（最常用）
+
+例如，允许 **账户 B 的用户** 访问 **账户 A 的 S3 bucket**：
+
+**账户 A（资源所有者）中的角色信任策略：**
+
+```
+{
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Effect": "Allow",
+    "Principal": {"AWS": "arn:aws:iam::123456789012:root"}, 
+    "Action": "sts:AssumeRole"
+  }]
+}
+```
+
+**账户 B（访问者）调用：**
+
+```
+aws sts assume-role \
+  --role-arn arn:aws:iam::111111111111:role/CrossAccountAccessRole \
+  --role-session-name testSession
+```
+
+------
+
+### 🔹 实现方式 2：基于资源策略的跨账户访问
+
+某些服务（如 S3、KMS、SNS、Lambda）支持直接定义资源策略：
+
+**S3 Bucket Policy 示例：**
+
+```
+{
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Effect": "Allow",
+    "Principal": {"AWS": "arn:aws:iam::123456789012:user/Alice"},
+    "Action": "s3:GetObject",
+    "Resource": "arn:aws:s3:::mybucket/*"
+  }]
+}
+```
+
+------
+
+### 🔹 实现方式 3：AWS Resource Access Manager (RAM)
+
+允许账户共享特定资源（如 VPC 子网、Route 53 Resolver 规则等）而无需跨账户角色。
+
+------
+
+## 🔐 三、多重身份验证（MFA, Multi-Factor Authentication）
+
+**MFA** 是增强登录安全的第二层保护。
+
+### 🔹 工作原理
+
+- 除密码（第一因素）外，还需输入一个 **动态验证码（第二因素）**。
+- 常见设备：
+  - 虚拟 MFA 应用（Google Authenticator、Authy）
+  - 硬件令牌（如 YubiKey）
+
+------
+
+### 🔹 使用场景
+
+1. **Root 用户必须启用 MFA**（强制性安全基线）
+2. **高权限用户和角色**：如 `AdministratorAccess`
+3. **敏感操作**（如关闭 CloudTrail、删除 IAM 用户）
+
+------
+
+### 🔹 IAM 策略中强制 MFA
+
+可以在策略中添加条件要求 MFA：
+
+```
+{
+  "Effect": "Deny",
+  "Action": "*",
+  "Resource": "*",
+  "Condition": {"BoolIfExists": {"aws:MultiFactorAuthPresent": "false"}}
+}
+```
+
+此策略会拒绝未使用 MFA 登录的用户的所有操作。
+
+------
+
+## 🧭 四、多账户安全策略与 AWS Control Tower
+
+### 🔹 背景
+
+大型组织往往会拥有多个 AWS 账户（按部门、环境或项目划分）。
+ 为避免安全混乱，AWS 推出了 **AWS Organizations + AWS Control Tower**。
+
+------
+
+### 🔹 AWS Organizations
+
+- 用于管理多个账户的集中式服务。
+- 可定义：
+  - **组织单元（OU）**：如 `Prod`, `Dev`, `Finance`。
+  - **服务控制策略（SCP）**：控制 OU 内账户的最大权限。
+
+**SCP 示例（禁止关闭 CloudTrail）**
+
+```
+{
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Effect": "Deny",
+    "Action": "cloudtrail:StopLogging",
+    "Resource": "*"
+  }]
+}
+```
+
+> 即使账户管理员有 `AdministratorAccess`，也无法关闭 CloudTrail。
+
+------
+
+### 🔹 AWS Control Tower
+
+是 Organizations 的**自动化管理层**，帮助你快速建立安全的多账户环境。
+
+主要功能：
+
+- **自动创建账户**并放入相应 OU；
+- **统一应用基线安全策略（guardrails）**；
+- **启用集中日志记录和安全审计**；
+- **配合 AWS SSO（IAM Identity Center）实现单点登录管理**。
+
+------
+
+### 🔹 Control Tower 安全管理实践
+
+✅ 将账户划分为三层：
+
+- **Log Archive 账户**：集中保存 CloudTrail 日志
+- **Audit 账户**：只读监控所有账户
+- **Workload 账户**：实际运行应用
+
+✅ 在 OU 层面应用 SCP：
+
+- 禁止 root 用户访问
+- 限制特定 Region
+- 禁止修改安全服务配置（如 GuardDuty、Config）
+
+✅ 搭配 AWS Security Hub + GuardDuty 实现持续威胁检测。
+
+------
+
+## 🔰 总结对比表
+
+| 项目              | 作用                   | 典型使用场景       | 关键服务                |
+| ----------------- | ---------------------- | ------------------ | ----------------------- |
+| **IAM 访问控制**  | 定义谁可以访问什么资源 | 单账户内的权限管理 | IAM                     |
+| **跨账户权限**    | 实现账户之间的安全访问 | Dev 访问 Prod 资源 | STS, Resource Policy    |
+| **MFA**           | 增强身份安全           | Root 用户、管理员  | IAM, MFA                |
+| **Control Tower** | 管理多账户安全基线     | 企业多环境集中治理 | Organizations, SCP, SSO |
 
 
 
@@ -14,19 +235,506 @@
 
 # 任务表述 1.2： 设计安全的工作负载和应用程序。
 
+安全网络设计（VPC、WAF、Shield、Secrets Manager）
 
+## 🧱 一、VPC（Amazon Virtual Private Cloud）
 
+### 🔹 概念
 
+**VPC 是 AWS 中的虚拟网络隔离环境**，你可以像在自建数据中心一样设计 IP 地址、子网、路由、安全组等。
+ 它是所有 AWS 网络安全的**基础层（Layer 3/4 防线）**。
+
+------
+
+### 🔹 关键组成
+
+| 组件                              | 功能                                                         |
+| --------------------------------- | ------------------------------------------------------------ |
+| **子网（Subnet）**                | 划分公有子网（可直接访问 Internet）与私有子网（仅内部访问）。 |
+| **路由表（Route Table）**         | 控制子网出入方向的流量路径。                                 |
+| **Internet Gateway (IGW)**        | 允许 VPC 与互联网通信。                                      |
+| **NAT Gateway / NAT Instance**    | 允许私有子网中的实例访问互联网（如下载包），但不被外部访问。 |
+| **安全组（Security Group）**      | 实例级防火墙，状态型（Stateful）。                           |
+| **网络 ACL（Network ACL）**       | 子网级防火墙，无状态（Stateless）。                          |
+| **VPC Peering / Transit Gateway** | 实现跨 VPC 通信。                                            |
+| **VPC Endpoint**                  | 私有访问 AWS 服务（无需走公网）。                            |
+
+------
+
+### 🔹 网络安全设计思路
+
+✅ **最小暴露面**：
+ 将 Web 层放在公有子网，数据库层放在私有子网。
+ 例如：
+
+```
+VPC
+ ├── 公有子网（Web服务器 + ALB）
+ │     └── Internet Gateway
+ └── 私有子网（App服务器 + RDS）
+       └── NAT Gateway
+```
+
+✅ **使用 Security Group 控制访问方向**
+
+```
+入站规则：仅允许 80/443 来源为 ALB
+出站规则：仅允许访问 RDS 的 3306 端口
+```
+
+✅ **使用 NACL 实现子网级过滤（如阻止特定 IP 段）**
+ ✅ **使用 VPC Endpoint 访问 AWS 服务（如 S3, DynamoDB）**，避免数据暴露到公网。
+ ✅ **使用 Flow Logs 记录网络流量**，审计可疑连接。
+
+------
+
+### 🔹 考点提示
+
+- 安全组 = 有状态；NACL = 无状态
+- NAT Gateway 用于出站访问
+- VPC Endpoint 避免公网访问 AWS 服务
+
+------
+
+## 🛡️ 二、WAF（AWS Web Application Firewall）
+
+### 🔹 概念
+
+**AWS WAF** 是一种 **7 层（应用层）防火墙**，用于保护 Web 应用免受常见攻击，例如：
+
+- SQL 注入
+- 跨站脚本攻击（XSS）
+- 恶意爬虫或暴力请求
+
+------
+
+### 🔹 部署位置
+
+- **Application Load Balancer (ALB)**
+- **Amazon CloudFront（边缘分发层）**
+- **API Gateway**
+
+------
+
+### 🔹 核心机制
+
+**Web ACL（访问控制列表）**：
+
+- 包含若干 **规则（Rules）**
+- 每个规则定义检测条件（例如匹配 IP、URI、Header、正则表达式）
+- 动作（Allow / Block / Count）
+
+例如：
+
+```
+{
+  "Action": "BLOCK",
+  "Statement": {
+    "ByteMatchStatement": {
+      "SearchString": "SELECT",
+      "FieldToMatch": {"Body": {}},
+      "TextTransformations": [{"Type": "URL_DECODE"}]
+    }
+  }
+}
+```
+
+该规则阻止包含 SQL 语句的请求。
+
+------
+
+### 🔹 扩展功能
+
+- **AWS Managed Rules**：AWS 预定义的规则组（OWASP Top 10 攻击防护）
+- **Rate-based Rules**：自动封禁高频请求（防爆破）
+- **Bot Control**：识别恶意爬虫流量
+- **Logging & Metrics**：与 CloudWatch、S3 集成记录攻击事件
+
+------
+
+### 🔹 最佳实践
+
+✅ 将 WAF 部署在 ALB 或 CloudFront 层
+ ✅ 使用 AWS Managed Rules 快速防御 OWASP 攻击
+ ✅ 开启日志并结合 CloudWatch 告警
+ ✅ 使用 Rate-based Rule 防止 DDoS 小流量攻击
+
+------
+
+## ⚔️ 三、AWS Shield（DDoS 防护）
+
+### 🔹 概念
+
+**AWS Shield** 是专为 AWS 应用提供的 **DDoS（分布式拒绝服务）防护服务**。
+ 它保护你的资源免受流量洪泛、协议攻击等外部攻击。
+
+------
+
+### 🔹 分类
+
+| 类型                | 功能                                        | 费用 | 保护级别   |
+| ------------------- | ------------------------------------------- | ---- | ---------- |
+| **Shield Standard** | 默认启用，自动保护 ALB、CloudFront、Route53 | 免费 | 基础防护   |
+| **Shield Advanced** | 提供更强防护 + 专属 24/7 响应团队           | 付费 | 企业级防护 |
+
+------
+
+### 🔹 Shield Advanced 特性
+
+- 防护层更高：网络层（L3/L4）+ 应用层（L7）
+- 可保护：EC2、ALB、CloudFront、Route 53、Global Accelerator
+- 自动检测异常流量并触发 AWS DDoS Response Team (DRT)
+- 与 WAF 集成可自动阻断攻击源 IP
+- 提供攻击报告与费用保护（AWS DDoS 费用补偿）
+
+------
+
+### 🔹 最佳实践
+
+✅ 对外暴露的应用统一放置在 ALB / CloudFront 后
+ ✅ 启用 Shield Advanced 对关键生产环境防护
+ ✅ 搭配 WAF 形成应用层防御
+ ✅ 使用 Route 53 DNS Failover 提升可用性
+
+------
+
+## 🔑 四、Secrets Manager（机密信息管理）
+
+### 🔹 概念
+
+**AWS Secrets Manager** 用于安全地存储、管理和自动轮换机密信息，例如：
+
+- 数据库密码
+- API 密钥
+- 第三方凭证（OAuth、令牌等）
+
+------
+
+### 🔹 核心特性
+
+1. **集中管理敏感信息**（加密存储在 KMS 下）
+2. **自动轮换密码**（与 RDS、Redshift、DocumentDB 集成）
+3. **精细访问控制**（基于 IAM Policy）
+4. **版本控制与审计日志**（与 CloudTrail 集成）
+
+------
+
+### 🔹 示例：访问 Secrets
+
+```
+import boto3
+import json
+
+client = boto3.client('secretsmanager')
+response = client.get_secret_value(SecretId='mydb/credentials')
+secrets = json.loads(response['SecretString'])
+print(secrets['password'])
+```
+
+------
+
+### 🔹 安全设计要点
+
+✅ 绝不要将密码写入代码或配置文件
+ ✅ 使用 IAM 限制对 Secrets 的访问权限
+ ✅ 启用自动轮换（如每 30 天）
+ ✅ 与 Lambda 集成，实现动态更新凭证
+
+------
+
+### 🔹 对比 Parameter Store（SSM）
+
+| 功能         | Secrets Manager          | SSM Parameter Store |
+| ------------ | ------------------------ | ------------------- |
+| 密钥自动轮换 | ✅ 有                     | ❌ 无                |
+| 费用         | 付费（按密钥数量）       | 免费（基础版）      |
+| 加密         | KMS                      | KMS                 |
+| 集成度       | 与 RDS/Redshift 深度集成 | 一般                |
+| 适合场景     | 存储高敏感凭证           | 存储配置参数        |
+
+------
+
+## 🧠 综合架构示例
+
+```
+                 ┌──────────────────────────────┐
+                 │     AWS CloudFront + WAF     │  ← 防御应用层攻击
+                 └──────────────┬───────────────┘
+                                │
+                ┌───────────────┴────────────────┐
+                │  Application Load Balancer (ALB)│
+                │   + AWS Shield Advanced          │ ← 防御 DDoS
+                └───────────────┬────────────────┘
+                                │
+               ┌────────────────┴───────────────┐
+               │          VPC (私有子网)        │
+               │  ┌───────────────────────────┐ │
+               │  │ EC2 / ECS App Server      │ │
+               │  │ 从 Secrets Manager 拉取密钥 │ │
+               │  └───────────────────────────┘ │
+               │  ┌───────────────────────────┐ │
+               │  │ RDS Database (私有子网)   │ │
+               │  └───────────────────────────┘ │
+               └────────────────────────────────┘
+```
+
+------
+
+## ✅ 总结对比表
+
+| 服务                | 层级            | 功能                                 | 主要用途          |
+| ------------------- | --------------- | ------------------------------------ | ----------------- |
+| **VPC**             | 网络层（L3/L4） | 隔离与访问控制（子网、NACL、安全组） | 基础安全边界      |
+| **WAF**             | 应用层（L7）    | 检测并阻断恶意请求                   | 防御 SQL/XSS/爬虫 |
+| **Shield**          | 网络层 + 应用层 | 防御 DDoS 攻击                       | 提升抗压能力      |
+| **Secrets Manager** | 数据层          | 管理加密密钥与凭证                   | 防止凭证泄露      |
 
 
 
 # 任务表述 1.3： 确定合适的数据安全控制措施。
 
+数据加密与合规（KMS、TLS、ACM）
 
+## 🧱 一、数据加密的层次结构
 
+在 AWS 中，数据加密主要分为两类：
 
+| 加密类型         | 英文名                | 示例服务                     | 说明                                   |
+| ---------------- | --------------------- | ---------------------------- | -------------------------------------- |
+| **静态数据加密** | Encryption at Rest    | S3、EBS、RDS、DynamoDB       | 数据存储在磁盘、数据库或对象存储时加密 |
+| **传输中加密**   | Encryption in Transit | HTTPS、TLS、VPN、PrivateLink | 数据在网络传输时加密                   |
 
+AWS 提供端到端加密机制：
+ **KMS → 管理密钥、ACM → 证书管理、TLS → 网络加密通道。**
 
+------
+
+## 🔑 二、AWS KMS（Key Management Service）
+
+### 🔹 概念
+
+AWS KMS 是 **集中管理加密密钥** 的服务，用于：
+
+- 创建和管理对称/非对称密钥；
+- 加密或解密数据；
+- 与其他 AWS 服务自动集成（S3、EBS、RDS、Lambda、CloudTrail 等）。
+
+------
+
+### 🔹 核心概念
+
+| 名称                                | 说明                                                         |
+| ----------------------------------- | ------------------------------------------------------------ |
+| **CMK（Customer Master Key）**      | 主密钥，用于加密数据密钥。分为两种类型：AWS Managed Key（自动管理）与 Customer Managed Key（自定义）。 |
+| **Data Key（数据密钥）**            | 实际用于加密文件或对象的数据密钥。                           |
+| **Envelope Encryption（信封加密）** | 使用数据密钥加密数据，再用主密钥加密数据密钥，实现层层保护。 |
+
+示意：
+
+```
+[数据] ←加密→ [数据密钥] ←再加密→ [主密钥]
+```
+
+------
+
+### 🔹 工作流程（S3 加密为例）
+
+1. 用户上传对象；
+2. S3 生成一个临时数据密钥；
+3. 用数据密钥加密文件内容；
+4. 用 KMS 主密钥加密数据密钥；
+5. 存储密文和被加密的密钥。
+
+------
+
+### 🔹 KMS 与各服务的集成
+
+| 服务                                  | 集成方式                                     |
+| ------------------------------------- | -------------------------------------------- |
+| **S3**                                | SSE-KMS（Server-Side Encryption with KMS）   |
+| **EBS**                               | 启动卷时选择加密，KMS 自动加密快照和备份     |
+| **RDS**                               | 创建数据库实例时启用加密，自动保护快照和日志 |
+| **CloudTrail**                        | 加密日志文件                                 |
+| **Secrets Manager / Parameter Store** | 存储加密凭证与配置                           |
+
+------
+
+### 🔹 权限与安全控制
+
+- 使用 IAM Policy 控制谁能使用密钥；
+- 可以配置 **Key Policy**（密钥策略）；
+- 支持 **密钥轮换（Key Rotation）**；
+- 所有密钥操作都会记录在 **CloudTrail**。
+
+------
+
+### 🔹 最佳实践
+
+✅ 使用 AWS Managed Key 满足默认安全需求；
+ ✅ 对关键业务数据使用 Customer Managed Key；
+ ✅ 启用密钥自动轮换（默认每年一次）；
+ ✅ 不直接存储明文密钥；
+ ✅ 使用 CloudTrail 审计密钥使用情况。
+
+------
+
+## 🔒 三、TLS（Transport Layer Security）
+
+### 🔹 概念
+
+**TLS（传输层安全协议）** 是在网络通信中提供 **加密、完整性、身份验证** 的协议。
+ 它是 HTTPS 的核心组成部分。
+
+> 通俗地说，TLS 确保你的数据在传输中不会被窃听或篡改。
+
+------
+
+### 🔹 TLS 在 AWS 中的应用场景
+
+| 场景                            | 示例                                          |
+| ------------------------------- | --------------------------------------------- |
+| 1️⃣ 客户端与 AWS 服务             | 使用 HTTPS（例如 `https://s3.amazonaws.com`） |
+| 2️⃣ 负载均衡器与后端实例          | ALB → EC2 之间启用 TLS 终止或透传             |
+| 3️⃣ 数据库连接                    | RDS 提供 TLS 连接                             |
+| 4️⃣ API Gateway                   | 支持强制使用 HTTPS                            |
+| 5️⃣ IoT、MQTT、Kinesis 等流式服务 | 使用 TLS 通道保护流数据                       |
+
+------
+
+### 🔹 TLS 工作原理简述
+
+1. 客户端请求服务器；
+2. 服务器返回数字证书（包含公钥）；
+3. 客户端验证证书有效性；
+4. 双方协商加密算法；
+5. 使用公钥/私钥交换会话密钥；
+6. 会话数据使用对称加密传输。
+
+------
+
+### 🔹 实施要点
+
+✅ 使用最新版本 TLS 1.2 或 TLS 1.3；
+ ✅ 禁用 SSLv3/TLS 1.0 等旧协议；
+ ✅ 证书由可信 CA（Certificate Authority）签发；
+ ✅ 后端实例之间的通信也应加密（内部 TLS 或 PrivateLink）。
+
+------
+
+## 🧾 四、AWS ACM（AWS Certificate Manager）
+
+### 🔹 概念
+
+**AWS Certificate Manager (ACM)** 用于 **自动签发、部署和续订 SSL/TLS 证书**。
+ 它让你无需手动生成 CSR、上传 PEM 或管理证书文件。
+
+------
+
+### 🔹 功能
+
+- **自动申请公有证书（免费）**：由 Amazon 签发，支持域名验证 (DNS/Email)。
+- **导入已有证书**（自签名或第三方 CA）。
+- **自动续订**：避免证书过期风险。
+- **集中管理证书**：统一查看、吊销、轮换。
+- 与以下服务自动集成：
+  - CloudFront
+  - ALB / NLB
+  - API Gateway
+  - Elastic Beanstalk
+
+------
+
+### 🔹 工作流程（以 ALB 为例）
+
+1. 在 ACM 中申请证书（如 `www.example.com`）；
+2. 验证域名所有权（DNS 记录或邮件验证）；
+3. 证书签发成功；
+4. 在 ALB 的 HTTPS Listener 中选择该证书；
+5. ALB 自动启用 TLS 加密。
+
+------
+
+### 🔹 ACM 私有证书管理
+
+通过 **ACM Private Certificate Authority (ACM PCA)** 可以：
+
+- 在企业内部创建自己的 CA；
+- 为内网服务签发证书；
+- 与 AWS Organizations 集成实现多账户证书信任。
+
+------
+
+### 🔹 最佳实践
+
+✅ 使用 ACM 管理公有证书，自动续期；
+ ✅ 对内网应用使用 ACM PCA 创建内部 CA；
+ ✅ 搭配 CloudFront/ALB 强制使用 HTTPS；
+ ✅ 结合 WAF + Shield 提供全链路加密防护。
+
+------
+
+## 🧭 五、数据合规性（Compliance）
+
+AWS 的加密体系符合多种国际安全与隐私标准：
+
+| 标准                          | 内容                                             |
+| ----------------------------- | ------------------------------------------------ |
+| **ISO 27001 / 27017 / 27018** | 信息安全管理体系                                 |
+| **SOC 1 / 2 / 3**             | 内控审计与安全性保证                             |
+| **GDPR / CCPA**               | 数据隐私保护                                     |
+| **HIPAA**                     | 医疗数据保护                                     |
+| **FIPS 140-2**                | 加密模块安全认证（KMS 使用 FIPS 140-2 认证硬件） |
+
+> 对于合规性要求较高的行业（金融、医疗、政企），可通过 AWS Artifact 获取官方合规报告。
+
+------
+
+## 🧠 六、考试要点总结（SAA-C03 高频考点）
+
+| 考点         | 关键知识                                     | 示例题型思路                        |
+| ------------ | -------------------------------------------- | ----------------------------------- |
+| **KMS 加密** | 使用信封加密、Customer Managed Key、轮换策略 | 如何安全地存储 S3 数据或 RDS 备份？ |
+| **TLS**      | 启用 HTTPS，禁用旧协议                       | 如何确保传输中数据不被窃听？        |
+| **ACM**      | 免费证书自动续期，ACM PCA 用于私有 CA        | 如何在 ALB 上简化证书管理？         |
+| **合规**     | 符合 FIPS / GDPR / SOC                       | 哪些 AWS 服务可支持加密合规需求？   |
+
+------
+
+## 🔰 七、综合架构示例
+
+```
+               ┌─────────────────────────────┐
+               │  CloudFront (HTTPS/TLS)     │
+               │  └── ACM 管理公有证书       │
+               └───────────┬────────────────┘
+                           │ (TLS 加密)
+               ┌───────────┴──────────────┐
+               │ ALB (HTTPS Listener)     │
+               │  └── 使用 ACM 证书        │
+               └───────────┬──────────────┘
+                           │
+            ┌──────────────┴──────────────┐
+            │  EC2 / ECS / Lambda (私网)  │
+            │  └── 使用 KMS 加密存储数据   │
+            │  └── TLS 访问 RDS 数据库     │
+            └──────────────┬──────────────┘
+                           │
+               ┌───────────┴──────────────┐
+               │  RDS (加密启用: KMS)     │
+               │  CloudTrail 审计日志加密 │
+               └──────────────────────────┘
+```
+
+------
+
+## ✅ 总结表
+
+| 层级           | 服务                    | 主要功能                 | 典型使用场景                  |
+| -------------- | ----------------------- | ------------------------ | ----------------------------- |
+| **密钥管理层** | AWS KMS                 | 管理与轮换加密密钥       | S3、EBS、RDS、Secrets Manager |
+| **传输层**     | TLS                     | 加密数据传输、身份验证   | HTTPS、API Gateway、RDS 连接  |
+| **证书层**     | AWS ACM                 | 证书申请、分发与自动续期 | ALB、CloudFront、API Gateway  |
+| **合规层**     | AWS Artifact / KMS FIPS | 审计与法规遵从           | ISO、GDPR、HIPAA              |
 
 
 
