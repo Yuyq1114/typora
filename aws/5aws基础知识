@@ -1,0 +1,177 @@
+# 1AMAZON WEB SERVICES 简介
+
+## 1.1什么是 AWS？
+
+https://render.skillbuilder.aws/?module_id=3YUHC87MUJ%3A001.000.001&product_id=T2CBPGN869%3A001.003.001&registration_id=54469ba4-8601-5214-be35-f00b28c55246&referrer=https%3A%2F%2Fskillbuilder.aws%2Flearn%2FK8C2FNZM6X%2Faws-technical-essentials-%2FT2CBPGN869%3FparentId%3DP7D86HVSZA&navigation=digital&parentId=P7D86HVSZA
+
+
+
+## 1.2AWS 全球基础设施
+
+
+
+## 1.3与 AWS 交互
+
+
+
+## 1.4安全性与 AWS 责任共担模式
+
+
+
+## 1.5保护 AWS 根用户
+
+
+
+
+
+## 1.6AWS Identity and Access Management
+
+
+
+
+
+## 1.7在 AWS 上托管员工目录应用程序
+
+
+
+
+
+
+
+# 2AWS 计算
+
+## 2.1计算即服务
+
+
+
+
+
+## 2.2Amazon EC2 入门
+
+
+
+
+
+## 2.3Amazon EC2 实例生命周期
+
+
+
+## 2.4容器服务
+
+
+
+
+
+## 2.5无服务器简介
+
+
+
+
+
+## 2.6借助 AWS Fargate 实现无服务器
+
+
+
+## 2.7借助 AWS Lambda 实现无服务器
+
+
+
+## 2.8选择合适的计算服务
+
+
+
+
+
+# 3AWS 联网
+
+## 3.1联网简介
+
+
+
+## 3.2Amazon VPC
+
+
+
+
+
+## 3.3Amazon VPC 路由
+
+
+
+
+
+
+
+## 3.4Amazon VPC 安全性
+
+
+
+# 4AWS 存储
+
+## 4.1存储类型
+
+## 4.2Amazon EFS 和 Amazon FSx 文件存储
+
+## 4.3Amazon EC2 实例存储和 Amazon EBS 数据块存储
+
+## 4.4Amazon S3 对象存储
+
+## 4.5选择合适的存储服务
+
+
+
+
+
+# 5AWS 上的数据库
+
+## 5.1AWS 上的数据库简介
+
+## 5.2Amazon RDS
+
+## 5.3专用数据库
+
+## 5.4Amazon DynamoDB
+
+## 5.5选择合适的数据库服务
+
+
+
+
+
+
+
+
+
+# 6监控、负载均衡和扩展
+
+
+
+## 6.1Amazon CloudWatch
+
+## 6.2解决方案优化
+
+## 6.3使用 Elastic Load Balancing 路由流量
+
+## 6.4Amazon EC2 Auto Scaling
+
+## 6.5重新设计员工目录应用程序
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 
