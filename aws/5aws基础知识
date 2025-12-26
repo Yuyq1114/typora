@@ -8,31 +8,74 @@ https://render.skillbuilder.aws/?module_id=3YUHC87MUJ%3A001.000.001&product_id=T
 
 ## 1.2AWS 全球基础设施
 
+datecenter
+
+available zone(AZ)
+
+region(合规性 延迟 定价 服务可用性)
+
+https://render.skillbuilder.aws/?module_id=3YUHC87MUJ%3A001.000.001&product_id=T2CBPGN869%3A001.003.001&registration_id=54469ba4-8601-5214-be35-f00b28c55246&referrer=https%3A%2F%2Fskillbuilder.aws%2Flearn%2FK8C2FNZM6X%2Faws-technical-essentials-%2FT2CBPGN869%3FparentId%3DP7D86HVSZA&navigation=digital&parentId=P7D86HVSZA
+
 
 
 ## 1.3与 AWS 交互
+
+1 AWS 管理控制台
+
+![image-20251224163257722](image\image-20251224163257722.png)
+
+
+
+2 AWS CLI 是一个统一的工具，您可以使用该工具来管理 AWS 服务。例如，您可以使用 AWS CLI 对服务运行以下 API 调用：
+**aws s3api list-buckets**
+
+
+
+3  AWS SDKSDK 是由 AWS 维护的开源工具包
 
 
 
 ## 1.4安全性与 AWS 责任共担模式
 
+![image-20251224163941826](image\image-20251224163941826.png)
+
+AWS 责任
+
+客户责任
+
 
 
 ## 1.5保护 AWS 根用户
 
+AWS 根用户
+
+多重身份验证
+
+AWS 上的 MFA
 
 
 
+## 1.6AWS  验证和访问管理
 
-## 1.6AWS Identity and Access Management
+**身份验证和授权**
 
-
-
-
-
-## 1.7在 AWS 上托管员工目录应用程序
+![image-20251224165250788](image\image-20251224165250788.png)
 
 
+
+**什么是 IAM？**
+
+● 授予或拒绝 执行操作的权限
+
+● 操作是 AWS API 调用
+
+● 将策略附加到 AWS 身份
+
+**MFA**
+
+**IAM 角色**
+
+![image-20251224170230092](image\image-20251224170230092.png)
 
 
 
@@ -42,11 +85,37 @@ https://render.skillbuilder.aws/?module_id=3YUHC87MUJ%3A001.000.001&product_id=T
 
 ## 2.1计算即服务
 
+**计算选项**
 
+![image-20251224173405114](image\image-20251224173405114.png)
 
+**计算列表**：
 
+![image-20251224173326818](image\image-20251224173326818.png)
 
 ## 2.2Amazon EC2 入门
+
+**Elastic Compute Cloud（EC2）**
+
+Amazon EC2 是一种 Web 服务，可在云中提供安全、可调整大小的计算容量。
+
+
+
+![image-20251224173711994](image\image-20251224173711994.png)
+
+要创建 EC2 实例，您必须定义：
+
+**硬件规范：**CPU、内存、网络和存储
+
+![image-20251224174748360](image\image-20251224174748360.png)
+
+**逻辑配置：**联网位置、防火墙规则、身份验证和所选的操作系统
+
+**亚马逊机器映像 (AMI)**
+
+EC2 实例是虚拟处理器 (vCPU)、内存、网络，以及（在某些情况下）实例存储和图形处理单元 (GPU) 的组合。
+
+![image-20251224173903748](image\image-20251224173903748.png)
 
 
 
@@ -54,31 +123,88 @@ https://render.skillbuilder.aws/?module_id=3YUHC87MUJ%3A001.000.001&product_id=T
 
 ## 2.3Amazon EC2 实例生命周期
 
-
+![image-20251224174116705](image\image-20251224174116705.png)
 
 ## 2.4容器服务
 
 
 
+**虚拟机和容器**
+
+![image-20251224175001369](image\image-20251224175001369.png)
+
+**管理容器**
+
+![image-20251224175025357](image\image-20251224175025357.png)
+
+**将 Kubernetes 与 Amazon EKS 结合使用**
+
+ECS EKS
+
 
 
 ## 2.5无服务器简介
 
+- 无需预置或管理服务器。
+- 根据使用情况进行扩展。
+- 不需要为闲置资源付费。
+- 内置可用性和容错能力。
+
+ **AWS Fargate 和 AWS Lambda**
 
 
 
 
-## 2.6借助 AWS Fargate 实现无服务器
+
+### 2.5.1借助 AWS Fargate 实现无服务器
+
+AWS Fargate 是一种专为容器构建的无服务器计算引擎。AWS Fargate 负责扩展和管理基础设施。该服务会分配合适数量的计算资源。
+
+![image-20251224175902699](image\image-20251224175902699.png)
+
+![image-20251225161037109](image\image-20251225161037109.png)
 
 
 
-## 2.7借助 AWS Lambda 实现无服务器
+### 2.5.2借助 AWS Lambda 实现无服务器
+
+Lambda 函数是 AWS Lambda 的基础构件。
+
+使用 Lambda，您可以在无需预置或管理服务器的情况下运行代码。可以运行几乎任何类型的应用程序或后端服务的代码。这包括数据处理、实时数据流处理、机器学习、WebSockets、IoT 后端、移动后端以及 Web 应用程序
+
+https://render.skillbuilder.aws/?module_id=3YUHC87MUJ%3A001.000.001&product_id=T2CBPGN869%3A001.003.001&registration_id=54469ba4-8601-5214-be35-f00b28c55246&referrer=https%3A%2F%2Fskillbuilder.aws%2Flearn%2FK8C2FNZM6X%2Faws-technical-essentials-%2FT2CBPGN869%3FparentId%3DP7D86HVSZA&navigation=digital&parentId=P7D86HVSZA
+
+![image-20251225162519889](image\image-20251225162519889.png)
+
+15分钟
+
+Simple Storage Service（S3 bucket）可以理解为互联网上的**无限容量的文件夹**或**命名容器**，用于存储和管理各种类型的**对象（Object）**
 
 
 
-## 2.8选择合适的计算服务
+## 2.6选择合适的计算服务
+
+**1.**
+
+您是一名开发人员，负责为 EC2 上托管的 Web 应用程序创建新功能。这个 Web 应用程序是一个在线商店。现在，商店中的所有待售商品都在后台人工加载到数据库中。这里的人工方式是指，对于商店中需要销售的每种新商品，都有人向数据库中添加一个新行。这个过程非常耗时，不太好扩展，而且容易出错。您的任务是，让新商品信息加载到库存数据库这一过程实现自动化。目标是让员工将库存电子表格上传到对象存储服务 Amazon S3，然后利用某个过程自动将数据加载到库存数据库中。
+
+**AWS Lambda**
+
+![image-20251225165405394](image\image-20251225165405394.png)
+
+**2.**
+
+您当前将应用程序托管在本地部署数据中心内，而这个应用程序需要迁移到 AWS。目前，它在数据中心的 Linux 服务器上运行，您希望尽量减少迁移到 AWS 所需的重构工作。重要的是，这种工作负载需要有弹性，可以支持变化的需求。
+
+**Amazon EC2** 
 
 
+
+**3.**
+
+您打算使用微服务或面向服务的设计来编写一个全新的应用程序。您希望构建可以快速扩展或缩减的应用程序，并希望降低将新变更部署到生产环境的风险。
+
+**AWS 容器服务之一，如 Amazon ECS 或 Amazon EKS**
 
 
 
@@ -86,23 +212,77 @@ https://render.skillbuilder.aws/?module_id=3YUHC87MUJ%3A001.000.001&product_id=T
 
 ## 3.1联网简介
 
+**联网是指连接世界各地的电脑并让它们相互通信的方式。**
+
+**联网基础知识**
+
+**IP 地址**
+
+**IPv4 表示法**
+
+**CIDR 表示法**
+
+
+
 
 
 ## 3.2Amazon VPC
 
+VPC（Virtual Private Cloud）即**虚拟私有云**，是云服务商提供的、在公有云上逻辑隔离的私有网络环境，让用户像在自己数据中心一样完全掌控网络配置（如IP地址、子网、路由表、网关等），安全地部署和管理云资源（如虚拟机、数据库），同时可以连接到本地数据中心，构建混合云。 
 
+**创建vpc**
+
+![image-20251225172615520](image\image-20251225172615520.png)
+
+
+
+**vpc**
+
+![image-20251225170427570](image\image-20251225170427570.png)
+
+
+
+**预留 IP**
+
+![image-20251225170446944](image\image-20251225170446944.png)
+
+**网关  互联网网关  虚拟私有网关**
+
+![image-20251225170618962](image\image-20251225170618962.png)
+
+**AWS Direct Connect**
+
+![image-20251225170611529](image\image-20251225170611529.png)
 
 
 
 ## 3.3Amazon VPC 路由
 
+![image-20251225172644048](image\image-20251225172644048.png)
+
+**主路由表**
+
+**自定义路由表**
 
 
 
+**最终状态**
+
+![image-20251225174356582](image\image-20251225174356582.png)
 
 
 
 ## 3.4Amazon VPC 安全性
+
+**网络 ACL**
+
+**使用网络访问控制列表保护子网**
+
+**使用安全组保护 EC2 实例**
+
+
+
+
 
 
 
@@ -110,15 +290,110 @@ https://render.skillbuilder.aws/?module_id=3YUHC87MUJ%3A001.000.001&product_id=T
 
 ## 4.1存储类型
 
+文件存储、数据块存储和对象存储
+
+![image-20251225194801511](image\image-20251225194801511.png)
+
+文件按树状层次结构进行组织，这个层次结构由文件夹和子文件夹组成。
+
+据块存储将文件拆分为固定大小的数据块，这些数据块有自己的地址。每个数据块都是一个单独的数据存储块。每个数据块都是可寻址的，因此可以高效地进行检索。可以将数据块存储看作访问数据的更直接的路由。
+
+（WORM模型  一次写入，多次读取）对象使用扁平结构存储在一个存储桶中，也就是说没有文件夹、目录或复杂的层次结构。每个对象都包含一个唯一的标识符。该标识符以及任何附加元数据都与数据捆绑在一起并进行存储。
+
+
+
+
+
 ## 4.2Amazon EFS 和 Amazon FSx 文件存储
+
+
+
+Amazon Elastic File System (Amazon EFS) 是一个一劳永逸的文件系统，该系统会随着您添加和删除文件而自动增长和缩减。不需要预置或管理存储容量和性能。
+
+
+
+Amazon FSx 是一项完全托管式服务，提供可靠性、安全性、可扩展性和一系列广泛的功能，使在云中启动、运行和扩展高性能文件系统变得更加方便和经济实惠。利用 Amazon FSx，您可以在四种广泛使用的文件系统之间进行选择：Lustre、NetApp ONTAP、OpenZFS 和 Windows File Server。
+
+
 
 ## 4.3Amazon EC2 实例存储和 Amazon EBS 数据块存储
 
+**实例存储**
+
+实例提供临时数据块级存储。此存储位于已通过物理方式附加到主机的磁盘上。这就将数据的生命周期与 EC2 实例的生命周期联系起来。如果删除实例，实例存储也会被删除。因此，实例存储被视为短暂存储。
+
+![image-20251225195352519](image\image-20251225195352519.png)
+
+![image-20251225195536375](image\image-20251225195536375.png)
+
+
+
+**EBS存储**
+
+Amazon Elastic Block Store (Amazon EBS) 是一种数据块级存储，可附加到 Amazon EC2 实例。您可以将这种附加方式与必须将外部驱动器附加到手提电脑的方式进行类比。这种可附加存储称为 EBS 卷。EBS 卷在多个方面与外部驱动器类似。
+
+**可分离 独立 大小受限**
+
+**增大卷大小    附加多个卷**
+
+**高可用性  数据持久性   数据加密   灵活性   备份**
+
+固态驱动器 (SSD) 和硬盘驱动器 (HDD)
+
+**Amazon EBS 快照**
+
 ## 4.4Amazon S3 对象存储
+
+
+
+Amazon Simple Storage Service (Amazon S3) 是一种独立的存储解决方案，与计算无关。使用 Amazon S3，可以从 Web 上的任何地方检索数据。
+
+![image-20251225195924609](image\image-20251225195924609.png)
+
+**Amazon S3 概念**
+
+```
+存储桶 
+
+```
+
+**Amazon S3 中的安全性**
+
+**Amazon S3 存储类**
+
+**Amazon S3 版本控制**
+
+**版本控制状态**
+
+**管理存储生命周期**
 
 ## 4.5选择合适的存储服务
 
+**Amazon EC2 实例存储**实例存储是临时性数据块存储。
 
+**Amazon EBS**适用于频繁更改且必须在实例停止、终止或硬件发生故障时持续存在的数据。
+
+**Amazon S3**非常适合存储静态 Web 内容和媒体、备份和归档以及用于分析的数据。
+
+**Amazon EFS**为一系列广泛的工作负载和应用程序提供高度优化的文件存储。这是唯一的具有完全自动生命周期管理的云原生共享文件系统。
+
+**Amazon FSx**提供与第三方文件系统的原生兼容性。
+
+
+
+您是一名开发人员，您打算构建一个应用程序来转码大型媒体文件，比如说视频。您将使用 AWS Lambda 函数执行转码，但您需要一个位置来存储原始媒体文件和转码后的媒体文件。根据法规，您需要将这些文件存储至少一年。您应该使用我们在本课程中讨论的哪种存储服务？您需要在 5 秒钟内回答。答案就是 Amazon S3。
+
+
+
+您是一家电子商务公司的架构师，希望在 EC2 实例上运行 MySQL 数据库。该数据库需要一个存储层，来存储订单和客户信息。数据库需要频繁访问和更新，因此存储层需要能够快速响应。重要的是存储要快速且持久。您应该使用哪种 AWS 存储服务？您需要在 5 秒钟内回答。答案就是 Amazon EBS。
+
+
+
+您有一个 Web 应用程序，它需要写入磁盘才能执行某些计算。这个应用程序将在计算过程中存储临时数据。这种架构最重要的方面是速度和成本。您有 5 秒钟的时间，您会选择哪种存储解决方案？答案就是 EC2 实例存储。
+
+
+
+假设您要在多个实例上创建一个 WordPress 网站。默认情况下，WordPress 将用户上传内容存储在本地文件系统上。因为您想要使用多个实例，所以需要将 WordPress 安装和所有用户自定义项移动到共享存储平台中。您会使用哪种存储选项？您有 5 秒钟的时间回答。答案是 Amazon Elastic File System (Amazon EFS)。
 
 
 
@@ -126,15 +401,174 @@ https://render.skillbuilder.aws/?module_id=3YUHC87MUJ%3A001.000.001&product_id=T
 
 ## 5.1AWS 上的数据库简介
 
+**关系数据库**
+
+关系数据库将数据整理到表中。一个表中的数据可以与其他表中的数据链接起来，从而建立关系，正是这个原因，它们被称为关系数据库。
+
+**关系数据库管理系统**
+
+利用关系数据库管理系统，也就是 RDBMS，您可以创建、更新和管理关系数据库。RDBMS 的一些常见示例包括：
+
+- MySQL
+- PostgreSQL
+
+**关系数据库的优势**
+
+复杂 SQL
+
+低冗余
+
+熟悉度
+
+准确率
+
+**非托管式数据库**
+
+![image-20251226105731473](image\image-20251226105731473.png)
+
+**托管式数据库**
+
+![image-20251226105749520](image\image-20251226105749520.png)
+
+
+
+
+
 ## 5.2Amazon RDS
+
+**Amazon Relational Database Service**  Amazon RDS 是一项托管式数据库服务，可供客户用于在云中创建和管理关系数据库，而无需承担传统数据库管理的运维负担。
+
+
+
+支持的 Amazon RDS 引擎包括：
+
+- **商用：**Oracle、SQL Server
+- **开源：**MySQL、PostgreSQL、MariaDB
+- **云原生：**AuroraAmazon Aurora 是一个特定于 AWS 的数据库，专为利用 AWS 云的可扩展性和持久性而构建。Aurora 设计为与 MySQL 或 PostgreSQL 直接兼容。128TB
+
+
+
+**数据库实例**就像您自己构建和管理的数据库一样，Amazon RDS 是从计算和存储构建的。
+
+
+
+**Amazon RDS 上的存储**Amazon RDS 数据库实例的存储部分使用 Amazon Elastic Block Store (Amazon EBS) 卷存储数据库和日志
+
+
+
+**Amazon Virtual Private Cloud 中的 Amazon RDS**
+
+创建数据库实例时，您需要选择数据库所在的 Amazon Virtual Private Cloud (Amazon VPC)。
+
+
+
+**备份数据**
+
+您不想丢失数据。要定期备份 Amazon RDS 实例，您可以使用自动备份或手动快照。
+
+
+
+**Amazon RDS 安全性**
+
+SSL 或 TLS
+
+Amazon RDS 加密
+
+安全组
+
+IAM
+
+
 
 ## 5.3专用数据库
 
+**关系数据库、键值数据库、文档数据库、内存数据库、图形数据库、时间序列数据库、宽列数据库和分类账数据库**
+
+
+
+**Amazon DynamoDB**
+
+DynamoDB 是一个完全托管式 NoSQL 数据库，可在任何规模下提供快速、一致的性能。它具有灵活的计费模式、与基础设施即代码 (IaC) 的紧密集成以及一种无需干预的运维模式。DynamoDB 已成为两类应用程序的首选数据库：大规模应用程序和无服务器应用程序。
+
+
+
+**Amazon ElastiCache** 
+
+ElastiCache 是一种完全托管式的内存中缓存解决方案。它支持两种开源的内存中缓存引擎：Redis 和 Memcached。
+
+
+
+**Amazon MemoryDB**
+
+MemoryDB 是一项与 Redis 兼容的持久内存数据库服务，可提供超快的性能。利用 MemoryDB，可以为现代化应用程序（例如，使用微服务架构构建的应用程序）提供微秒级读取延迟、个位数毫秒级写入延迟、高吞吐量和多可用区持久性。
+
+
+
+**Amazon DocumentDB（兼容 MongoDB）**
+
+Amazon DocumentDB 是 AWS 推出的一种完全托管式文档数据库。文档数据库是一种 NoSQL 数据库，可用于在应用程序中存储和查询丰富的文档。
+
+
+
+**Amazon Keyspaces（Apache Cassandra 兼容）**
+
+Amazon Keyspaces 是一种可扩展、高度可用且兼容 Apache Cassandra 的托管式数据库服务。Apache Cassandra 常用于需要顶尖性能的大规模应用程序。Amazon Keyspaces 非常适合具有简单访问模式的大容量应用程序。
+
+
+
+**Amazon Neptune**
+
+Neptune 是由 AWS 提供的完全托管式图数据库。图数据库非常适合具有丰富关系的高度互连数据。
+
+
+
+**Amazon Timestream**
+
+Timestream 是一种快速、可扩展且无服务器的时间序列数据库服务，适用于物联网 (IoT) 和运营应用程序。该服务让每天存储和分析数万亿个事件变得轻松
+
+
+
+**Amazon Quantum Ledger Database (Amazon QLDB)**
+
+Amazon QLDB 是一种专用的分类账数据库，可提供有关所有应用程序数据更改的完整历史记录，这些历史记录能够以加密方式验证。
+
+
+
 ## 5.4Amazon DynamoDB
+
+![image-20251226142315438](image\image-20251226142315438.png)
+
+**DynamoDB 核心组件**
+
+![image-20251226141943802](image\image-20251226141943802.png)
+
+**DynamoDB 使用案例**
+
+1您在使用其他传统数据库系统时遇到了可扩展性问题。
+
+2您正在积极参与应用程序或服务的开发工作。
+
+3您正在处理 OLTP 工作负载。
+
+4您需要部署一个任务关键型应用程序，该应用程序必须始终高度可用，无需人工干预。
+
+5无论采用何种备份和恢复策略，您都需要高级别的数据持久性。
+
+**DynamoDB 安全性**
+
+1使用 AWS CloudTrail 监控 AWS 托管密钥的使用情况
+
+2使用 IAM 角色验证对 DynamoDB 的访问权限
+
+3使用 IAM 策略条件实现精细访问控制
+
+4使用 CloudTrail 监控 DynamoDB 操作
+
+
 
 ## 5.5选择合适的数据库服务
 
-
+![image-20251226142750916](image\image-20251226142750916.png)
 
 
 
@@ -144,23 +578,170 @@ https://render.skillbuilder.aws/?module_id=3YUHC87MUJ%3A001.000.001&product_id=T
 
 # 6监控、负载均衡和扩展
 
+收集和分析有关资源运行状况和使用情况的数据。为了制定决策或者回答 IT 资源和系统相关问题而收集、分析和使用数据的行为，就称为监控。
 
+**使用指标来解决问题**
+
+**指标类型**
+
+1Amazon Simple Storage Service (Amazon S3) 指标
+
+- 存储在存储桶中的对象的大小
+- 存储在存储桶中的对象的数量
+- 向存储桶发出的 HTTP 请求数
+
+2Amazon Relational Database Service (Amazon RDS) 指标
+
+- 数据库连接数
+- 实例的 CPU 利用率
+- 磁盘空间消耗量
+
+3 Amazon EC2 指标
+
+- CPU 利用率
+- 网络利用率
+- 磁盘性能
+- 状态检查
+
+**监控的益处**
 
 ## 6.1Amazon CloudWatch
 
+CloudWatch 是一项监控和可观测性服务，可收集您的资源数据并提供有关您应用程序的可行见解。使用 CloudWatch，您可以响应系统范围的性能变化，优化资源使用情况，并获得统一的运行状况视图。
+
+
+
+**CloudWatch 工作原理**
+
+![image-20251226144233855](image\image-20251226144233855.png)
+
+**CloudWatch 概念**
+
+**自定义指标**
+
+**CloudWatch 控制面板**
+
+**Amazon CloudWatch Logs**
+
+日志事件 
+
+日志事件按日志流分组，日志流是日志事件的序列，所有日志事件都属于同一受监控的资源。 
+
+日志组由日志流组成，这些日志流都共享相同的保留和权限设置。 
+
+**CloudWatch 警报** 
+
+In alarm（警报中）、OK（正常）或 Insufficient data（数据不足）
+
+
+
 ## 6.2解决方案优化
+
+**可用性**
+
+![image-20251226145514178](image\image-20251226145514178.png)
+
+
+
+**提高应用程序的可用性**
+
+主动/被动系统
+
+在主动/被动系统中，每次两个实例中只有一个实例可用。这种方法的一个优点是，对于有状态的应用程序（客户端会话数据存储在服务器上）来说，不会出现任何问题。这是因为客户总是连接到存储其会话的服务器。
+
+双活系统
+
+主动/被动系统的一个缺点是可扩展性，而这正是双活系统的优势所在。在两台服务器都可用的情况下，第二台服务器可以为应用程序承担一些负载，而整个系统则可以承担更多负载。但是，如果应用程序是有状态的，当客户的会话在两台服务器上都不可用，就会出现问题。无状态应用程序更适合双活系统。
 
 ## 6.3使用 Elastic Load Balancing 路由流量
 
+![image-20251226152826101](image\image-20251226152826101.png)
+
+Elastic Load Balancing (ELB) 服务可以在 EC2 实例、容器、IP 地址和 Lambda 函数之间分发传入的应用程序流量。
+
+**负载均衡器**负载均衡是指跨一组资源分发任务的过程。
+
+**ELB 功能**
+
+- **混合模式 –** 因为 ELB 可以对 IP 地址进行负载均衡，所以它可以在混合模式下工作，这意味着它还可以对本地部署服务器进行负载均衡。
+- **高可用性 \**–\**** ELB 高度可用。唯一必须确保的是，负载均衡器的目标部署在多个可用区。
+- **可扩展性 \**–\**** 在可扩展性方面，ELB 可自动扩展，满足传入流量的需求。ELB 会处理传入流量并将流量发送到您的后端应用程序。
+
+**运行状况检查**
+
+**ELB 组件**
+
+ELB 服务由三个主要组件构成：规则、侦听器和目标组。
+
+![image-20251226145748457](image\image-20251226145748457.png)
+
+**负载均衡器类型**
+
+![image-20251226145832892](image\image-20251226145832892.png)
+
+应用程序负载均衡器(ALB)在开放式系统互联 (OSI) 模型的第 7 层运行，非常适合对 HTTP 和 HTTPS 流量进行负载均衡。
+
+网络负载均衡器(NLB)非常适合对 TCP 和 UDP 流量进行负载均衡。它在 OSI 模型的第 4 层发挥作用，可以根据 IP 协议数据，路由目标组中某个目标的连接。
+
+网关负载均衡器(GLB)可以部署、扩展和管理第三方设备，例如防火墙、入侵检测和防御系统以及深度数据包检测系统。
+
+**选择 ELB 类型**
+
+![image-20251226145906379](image\image-20251226145906379.png)
+
 ## 6.4Amazon EC2 Auto Scaling
+
+**容量问题**
+
+增加实例大小。
+
+添加更多实例
+
+**传统扩展与弹性伸缩**
+
+**Amazon EC2 Auto Scaling 功能**
+
+弹性伸缩
+
+计划扩展
+
+实例集管理
+
+预测性扩展
+
+购买选项
+
+Amazon EC2 可用性
+
+**配置 Amazon EC2 Auto Scaling 组件**
+
+- **启动模板或配置：**应该对哪些资源进行弹性伸缩？
+- **Amazon EC2 Auto Scaling 组：**资源应该部署到什么位置？
+- **扩缩策略：**何时添加或删除资源？
+
+
+
+**Amazon EC2 Auto Scaling 组**
+
+![image-20251226154555198](image\image-20251226154555198.png)
+
+**扩缩策略**
+
+简单扩缩策略
+
+步进扩缩策略
+
+目标跟踪扩缩策略
+
+
 
 ## 6.5重新设计员工目录应用程序
 
 
 
+![image-20251226161214177](image\image-20251226161214177.png)
 
-
-
+![image-20251226161233947](image\image-20251226161233947.png)
 
 
 
