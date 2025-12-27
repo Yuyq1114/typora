@@ -1,6 +1,6 @@
 # 0介绍
 
-![image-20251224154843781](C:\Users\31178\AppData\Roaming\Typora\typora-user-images\image-20251224154843781.png)
+![image-20251224154843781](images\image-20251224154843781.png)
 
 
 

@@ -71,6 +71,10 @@ AWS 上的 MFA
 
 ● 将策略附加到 AWS 身份
 
+
+
+大多数 IAM 策略以 JSON 文档的形式存储在 AWS 中。它们有几个策略要素，包括 Version、Effect、Action 和 Resource。
+
 **MFA**
 
 **IAM 角色**
