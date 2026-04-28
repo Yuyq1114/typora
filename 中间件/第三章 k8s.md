@@ -1,4 +1,4 @@
-![](C:\Users\31178\Desktop\k8s_architecture.png)
+![](images\k8s_architecture.png)
 
 ## 基本概念
 
@@ -513,6 +513,289 @@ sudo ctr images import kafka/kafka.tar
 
    - 设置当前上下文的默认命名空间。
 
+
+
+## 具体的对象
+
+| 分类 | 对象                           | 解决什么问题 |
+| ---- | ------------------------------ | ------------ |
+| 计算 | Pod / Deployment / StatefulSet | 程序怎么跑   |
+| 网络 | Service / Ingress              | 怎么被访问   |
+| 存储 | PV / PVC / StorageClass        | 数据放哪     |
+| 配置 | ConfigMap / Secret             | 配置怎么给   |
+| 管理 | Namespace / Label / Selector   | 怎么管       |
+
+### 1、存储体系中
+
+#### 1️⃣ 为什么需要它？
+
+现实问题：
+
+- Pod 随时会被删
+- 节点会重启
+- 容器文件系统不可靠
+
+> **数据不能跟着 Pod 走**
+
+------
+
+#### 2️⃣ PV（PersistentVolume）
+
+> **集群级的“硬盘资源”**
+
+特点：
+
+- 管理员创建
+- 与 Pod 无关
+- 生命周期独立
+
+```
+kind: PersistentVolume
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: /data/mysql
+```
+
+工程直觉：
+
+> PV = 后端存储的抽象描述
+
+------
+
+#### 3️⃣ PVC（PersistentVolumeClaim）
+
+> **应用对存储的“申请单”**
+
+```
+kind: PersistentVolumeClaim
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+```
+
+特性：
+
+- 应用创建
+- 不关心底层存储
+- 只关心容量、访问模式
+
+工程直觉：
+
+> PVC = “我要一个 5G 硬盘”
+
+------
+
+#### 4️⃣ StorageClass（自动化关键）
+
+> **“PVC → 自动生成 PV” 的规则**
+
+```
+kind: StorageClass
+provisioner: rancher.io/local-path
+```
+
+有了它：
+
+```
+PVC 创建
+↓
+自动创建 PV
+↓
+绑定
+```
+
+👉 **平台工程的核心组件之一**
+
+------
+
+#### 5️⃣ 它们的关系
+
+```
+Pod → PVC → PV → 实际存储
+```
+
+### 2、网络体系中
+
+#### 1️⃣ 为什么需要 Service？
+
+Pod 的 IP：
+
+- 会变
+- 不稳定
+- 不能依赖
+
+> **访问 Pod 必须有稳定入口**
+
+------
+
+#### 2️⃣ Service 是什么？
+
+> **一组 Pod 的稳定访问入口**
+
+```
+kind: Service
+spec:
+  selector:
+    app: mysql
+  ports:
+    - port: 3306
+```
+
+你访问的是：
+
+```
+mysql.default.svc.cluster.local
+```
+
+而不是 Pod IP。
+
+------
+
+#### 3️⃣ Service 的三种常见类型
+
+| 类型         | 用途                 |
+| ------------ | -------------------- |
+| ClusterIP    | 集群内部访问（默认） |
+| NodePort     | 节点端口暴露         |
+| LoadBalancer | 云厂商负载均衡       |
+
+------
+
+#### 4️⃣ 工程直觉
+
+> Service = 负载均衡 + 服务发现
+
+
+
+### 3、配置体系
+
+#### 1️⃣ 为什么不能写死在镜像里？
+
+- 每个环境不同
+- 频繁修改
+- 不想重建镜像
+
+> **配置必须外置**
+
+------
+
+#### 2️⃣ ConfigMap（明文配置）
+
+```
+kind: ConfigMap
+data:
+  my.cnf: |
+    max_connections=200
+```
+
+用途：
+
+- 配置文件
+- 非敏感参数
+
+------
+
+#### 3️⃣ Secret（敏感配置）
+
+```
+kind: Secret
+data:
+  password: base64(...)
+```
+
+特点：
+
+- base64（不是加密）
+- RBAC 控制访问
+
+------
+
+#### 4️⃣ 它们怎么给 Pod？
+
+##### 方式一：环境变量
+
+```
+env:
+- name: MYSQL_PASSWORD
+  valueFrom:
+    secretKeyRef:
+      name: mysql
+      key: password
+```
+
+##### 方式二：挂载成文件（更常用）5
+
+```
+volumeMounts:
+- mountPath: /etc/mysql
+```
+
+------
+
+#### 5️⃣ 工程直觉
+
+> ConfigMap / Secret = “运行时配置输入”
+
+
+
+
+
+### 4、Deployment vs StatefulSet
+
+| 对比   | Deployment | StatefulSet     |
+| ------ | ---------- | --------------- |
+| Pod 名 | 随机       | 固定（mysql-0） |
+| 存储   | 通常共享   | 每 Pod 一个 PVC |
+| 用途   | 无状态     | 有状态          |
+
+MySQL / Redis / Kafka → **StatefulSet**
+
+
+
+### 5、Namespace（资源隔离）
+
+> **逻辑上的“租户 / 环境隔离”**
+
+```
+default
+dev
+test
+prod
+```
+
+Helm Release 是 **绑定 namespace 的**。
+
+------
+
+### 6、Label / Selector（K8s 的“胶水”）
+
+```
+labels:
+  app: mysql
+```
+
+Service 通过 selector 找 Pod：
+
+```
+selector:
+  app: mysql
+```
+
+> **没有 Label，K8s 就无法工作**
+
+
+
+
+
+
+
 ## 问题和解决方案（内部算法）
 
 ### 1. **容器调度**
@@ -629,4 +912,30 @@ sudo ctr images import kafka/kafka.tar
   - **配置管理**：使用 ConfigMap 和 Secret 管理应用配置和敏感数据，实现配置的灵活性和安全性。
 - **版本控制**：
   - **配置版本化**：对配置进行版本控制，确保配置变更可追溯，并可以轻松回滚到先前版本。
-  - 
+
+
+
+
+
+## 其他：通过goland连接k8s
+
+1、左下角service，加号，点击add  cluster，选择paste  kubeconfig content。
+
+2、cat  ~/.kube/config
+
+3 、c:/user/name/.kube/config
+
+4、选一下namespace
+
+
+
+感觉有bug，只能连接这个文件中的，不管怎么调
+
+
+
+## 组件
+
+
+
+
+
