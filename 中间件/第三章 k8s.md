@@ -517,6 +517,10 @@ sudo ctr images import kafka/kafka.tar
 
 ## 具体的对象
 
+CRD 自定义资源定义
+
+CR 自定义资源实例
+
 | 分类 | 对象                           | 解决什么问题 |
 | ---- | ------------------------------ | ------------ |
 | 计算 | Pod / Deployment / StatefulSet | 程序怎么跑   |
