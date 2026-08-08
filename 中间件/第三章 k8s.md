@@ -1,5 +1,13 @@
 ![](images\k8s_architecture.png)
 
+
+
+https://kubernetes.io/zh-cn/docs/tutorials/kubernetes-basics/
+
+https://kubernetes.io/zh-cn/docs/concepts/
+
+https://kubernetes.io/docs/concepts/overview/
+
 ## 基本概念
 
 ### 1. 集群（Cluster）
