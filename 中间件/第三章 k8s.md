@@ -525,6 +525,34 @@ sudo ctr images import kafka/kafka.tar
 
 ## 具体的对象
 
+### 资源范围
+
+查看：
+
+例如：
+
+```
+kubectl api-resources
+```
+
+输出：
+
+```
+NAME              SHORTNAMES   NAMESPACED
+pods              po           true
+services          svc          true
+persistentvolumes pv           false
+storageclasses    sc           false
+nodes                          false
+```
+
+其中：
+
+- `true` → 属于 Namespace
+- `false` → 集群级资源
+
+
+
 CRD 自定义资源定义
 
 CR 自定义资源实例
@@ -931,17 +959,85 @@ selector:
 
 ## 其他：通过goland连接k8s
 
-1、左下角service，加号，点击add  cluster，选择paste  kubeconfig content。
+```
+通过From default directory ,就是从默认的 C:\Users\1003716\.kube\config 文件下读取
 
-2、cat  ~/.kube/config
+通过From custom kubeconfigs ，就是从自定义的config文件读取，文件名无后缀
 
-3 、c:/user/name/.kube/config
+通过Parse kubeconfig content，就是复制远程机器的kubectlconfig文件读取
 
-4、选一下namespace
+add时有个可选项是是否加到C:\Users\1003716\.kube\config 这个文件下，这会C:\Users\1003716\.kube\config下一层层多出来很多的配置，建议加上，因为后面的teleprensece连接的时候会默认用这个文件
+```
+
+```
+1、修改  config  文件中的以下内容 不然goland自动玩会有冲突
+clusters:
+- name: k3s-212-45
+
+contexts:
+- context:
+    cluster: k3s-212-45
+    user: k3s-212-45-user
+  name: k3s-212-45
+
+users:
+- name: k3s-212-45-user
+
+current-context: k3s-212-45
+
+2、如果 clusters: 下的 - cluster: 下的 server:  是127.0.0.1:6443 ,还需要改一下这个ip成对应目标ip，只需要改用于连接的本地config即可，不用改远端的config
+
+3、如果不可以进行6443的连接 但是开放了ssh端口 可以将流量代理下走ssh，另外配置文件需要127.0.0.1:可用端口
+
+注意：如果用数字需要加引号防止go build类型错误
+
+4、teleprense使用
+怎么配置 windows10有bug
+telepresence quit -s
+telepresence connect -n test1
+telepresence intercept num-consumer --port 8081:8081
+telepresence list
+telepresence leave num-consumer这是命令行
+
+goland中怎么用
+1、teleprencese service类型：deployment，ReplicaSet, StatefulSet ArgoRollout
+拦截这四种，调试手段是同一套：流量转到本机，GoLand 里断点、改局部变量。差别不在「能多干一件神奇的事」，而在 集群里真正管这些 Pod 的是哪一种对象，你就拦哪一种。
+OSS 常见四种：
+拦什么	典型场景 拦截之后实际发生的事
+Deployment
+无状态 Web / API
+进这个 Deployment 对应 Service 的请求转到本机
+ReplicaSet
+独立 RS，没有上层 Deployment
+只劫持 这一个 RS 管的 Pod
+StatefulSet
+有序号、稳身份的服务（DB、消息队列、主从）
+劫持这个 STS 对应 Service 的流量
+Argo Rollout
+金丝雀 / 蓝绿发布
+拦正在灰度的那份工作负载
+
+2、--mount false 参数，不挂盘，只拦流量
+
+3、port的，如果只有一个 Service ，那么可以只写个8080，然后会知道，如果有多个svc 8080:30080/TCP,9090:30090/TCP，就要填8080:XXX,XXX可以是http，gprc这种形式，也可以是30880这种端口形式.
+本机 8081（冒号左边）
+GoLand 的 Run/Debug 配置里加环境变量：PORT=8081 程序才会 ListenAndServe(":8081")。集群 8082（冒号右边）k8s/hello-tp.yaml 里和“容器在听哪个端口”有关的都要改成 8082：
+
+4、前端拦截 也可以
+5、teleprencese还有很多额外参数
+```
+
+```
+1、kubelet 和 helm的安装，可以在外网用goland下载，然后将可执行文件弄到内网，然后放在path下就可以了
+2、teleprence下载下来，解压出可执行文件，然后放到path
+另外由于teleprensece连接的时候需要在目标机器安装traffic-manager组件，因此会拉镜像，可以在外网打包根据对应的teleprensece version版本下载对应的包，拷到内网导入，如ghcr.io/telepresenceio/tel2:2.26.2,traffic应该会在这个ambassador namespace下
+
+如果中途失败，本机手动执行telepresence helm install --kubeconfig <45的kubeconfig> --manager-namespace ambassador
+
+3、
+```
 
 
-
-感觉有bug，只能连接这个文件中的，不管怎么调
 
 
 
