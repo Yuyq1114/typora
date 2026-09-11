@@ -32,7 +32,7 @@ implement
 
 constitution（项目级，通常一次）
         ↓
-specify      → 生成 spec.md（需求）
+specify      → 生成 spec.md（需求）可能还有requirements.md
         ↓
 clarify     → 澄清模糊点，写回 spec.md（plan 前建议做）
         ↓
