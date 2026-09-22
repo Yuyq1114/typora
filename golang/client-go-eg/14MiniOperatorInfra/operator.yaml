@@ -1,0 +1,72 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: mini-operator-system
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: mini-operator
+  namespace: mini-operator-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: mini-operator
+rules:
+  - apiGroups: ["demo.example.com"]
+    resources: ["webapps"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: [""]
+    resources: ["services"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: ["coordination.k8s.io"]
+    resources: ["leases"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: mini-operator
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: mini-operator
+subjects:
+  - kind: ServiceAccount
+    name: mini-operator
+    namespace: mini-operator-system
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mini-operator
+  namespace: mini-operator-system
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: mini-operator
+  template:
+    metadata:
+      labels:
+        app: mini-operator
+    spec:
+      serviceAccountName: mini-operator
+      containers:
+        - name: operator
+          image: client-go-eg:local
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: CONTROLLER_CHOICE
+              value: "14"
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          resources:
+            requests: {cpu: 20m, memory: 32Mi}
+            limits: {cpu: 200m, memory: 128Mi}

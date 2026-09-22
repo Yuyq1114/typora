@@ -1,0 +1,41 @@
+apiVersion: trainer.kubeflow.org/v1alpha1
+kind: TrainJob
+metadata:
+  name: stage3-custom-runtime
+  labels:
+    learning.kubeflow.org/stage: "3"
+spec:
+  runtimeRef:
+    kind: TrainingRuntime
+    name: single-gpu-runtime
+  trainer:
+    numNodes: 1
+    image: python:3.11-slim
+    command:
+      - python
+      - /workspace/train.py
+    env:
+      - name: STAGE
+        value: 03-custom-runtime
+    resourcesPerNode:
+      requests:
+        cpu: 500m
+        memory: 1Gi
+        nvidia.com/gpu: "1"
+      limits:
+        memory: 2Gi
+        nvidia.com/gpu: "1"
+  podTemplateOverrides:
+    - targetJobs:
+        - name: node
+      spec:
+        containers:
+          - name: node
+            volumeMounts:
+              - name: training-code
+                mountPath: /workspace
+                readOnly: true
+        volumes:
+          - name: training-code
+            configMap:
+              name: kubeflow-workflow-code

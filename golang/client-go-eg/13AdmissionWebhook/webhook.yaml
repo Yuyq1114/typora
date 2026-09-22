@@ -1,0 +1,43 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: mini-mutating-webhook
+webhooks:
+  - name: mutate.mini.example.com
+    admissionReviewVersions: ["v1"]
+    sideEffects: None
+    failurePolicy: Ignore
+    timeoutSeconds: 2
+    clientConfig:
+      url: https://WEBHOOK_HOST:9443/mutate
+      caBundle: CA_BUNDLE
+    namespaceSelector:
+      matchLabels:
+        mini-webhook: enabled
+    rules:
+      - operations: ["CREATE"]
+        apiGroups: [""]
+        apiVersions: ["v1"]
+        resources: ["pods"]
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: mini-validating-webhook
+webhooks:
+  - name: validate.mini.example.com
+    admissionReviewVersions: ["v1"]
+    sideEffects: None
+    failurePolicy: Ignore
+    timeoutSeconds: 2
+    clientConfig:
+      url: https://WEBHOOK_HOST:9443/validate
+      caBundle: CA_BUNDLE
+    namespaceSelector:
+      matchLabels:
+        mini-webhook: enabled
+    rules:
+      - operations: ["CREATE"]
+        apiGroups: [""]
+        apiVersions: ["v1"]
+        resources: ["pods"]

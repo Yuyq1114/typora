@@ -1,0 +1,40 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: stage1-k8s-job
+  labels:
+    learning.kubeflow.org/stage: "1"
+spec:
+  backoffLimit: 0
+  template:
+    metadata:
+      labels:
+        learning.kubeflow.org/stage: "1"
+    spec:
+      restartPolicy: Never
+      runtimeClassName: nvidia
+      containers:
+        - name: trainer
+          image: python:3.11-slim
+          command:
+            - python
+            - /workspace/train.py
+          env:
+            - name: STAGE
+              value: 01-k8s-job
+          resources:
+            requests:
+              cpu: 500m
+              memory: 1Gi
+              nvidia.com/gpu: "1"
+            limits:
+              memory: 2Gi
+              nvidia.com/gpu: "1"
+          volumeMounts:
+            - name: training-code
+              mountPath: /workspace
+              readOnly: true
+      volumes:
+        - name: training-code
+          configMap:
+            name: kubeflow-workflow-code

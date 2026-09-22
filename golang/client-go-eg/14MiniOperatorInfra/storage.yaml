@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata: {name: storage-lab, namespace: test1}
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests: {storage: 128Mi}
+---
+apiVersion: v1
+kind: Pod
+metadata: {name: storage-lab, namespace: test1}
+spec:
+  containers:
+    - name: shell
+      image: busybox:1.36
+      command: ["sh", "-c", "echo hello-from-csi > /data/message; sleep 3600"]
+      volumeMounts:
+        - {name: data, mountPath: /data}
+  volumes:
+    - name: data
+      persistentVolumeClaim: {claimName: storage-lab}

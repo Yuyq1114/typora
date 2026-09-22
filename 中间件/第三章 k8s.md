@@ -10,7 +10,7 @@ https://kubernetes.io/docs/concepts/overview/
 
 
 
-# 思考和学习路径
+## 思考和学习路径
 
 k8s本身作为系统是怎么实现可用 正确  性能的。。。
 
@@ -27,7 +27,338 @@ k8s作为基础设施 是怎么保证其管理的组件的 可用 正确 性能�
 
 
 
+## 实现过程
 
+### 1、第一版做一个 **ConfigMap Controller**：
+
+```
+API Server
+    ↓
+Reflector
+    ↓
+DeltaFIFO
+    ↓
+Informer
+    ↓
+Indexer / Local Cache
+    ↓
+EventHandler
+    ↓
+WorkQueue
+    ↓
+Worker
+    ↓
+SyncHandler / Reconcile
+    ↓
+client-go
+    ↓
+API Server
+```
+
+### 2、第二阶段：升级成 WebApp CRD
+
+
+
+### 3、第三阶段：client-go 操作 CRD
+
+Kubernetes API 本质上并不在乎 Go struct。
+
+
+
+### 4、第四阶段：Informer    Watch
+
+```
+kube-apiserver
+
+      │ WATCH
+
+      ▼
+
+Reflector
+
+      │
+
+      ▼
+
+DeltaFIFO
+
+      │
+
+      ▼
+
+Informer
+
+   ┌──┴───┐
+   ↓      ↓
+
+Cache    Handler
+          │
+          ▼
+       WorkQueue
+```
+
+### 5、第五阶段：WorkQueue
+
+```
+Event
+ ↓
+Queue
+ ↓
+Worker
+ ↓
+Reconcile
+```
+
+Burst Event
+Retry
+Rate Limit
+Failure
+Concurrency
+Deduplication
+
+### 6、第六阶段：Lister / Cache
+
+```
+API Server
+    │
+    │ WATCH
+    ▼
+Informer
+    │
+    ▼
+Cache
+    │
+    ▼
+Lister
+    │
+    ▼
+Controller
+```
+
+### 7、第七阶段：真正写 Reconcile
+
+```
+Desired State
+
+WebApp:
+replicas = 3
+
+       VS
+
+Actual State
+
+Deployment:
+replicas = 2
+
+       ↓
+
+diff
+
+       ↓
+
+Update Deployment → 3
+```
+
+### 8、第八阶段：故意搞破坏
+
+Controller 并不是“执行用户命令”，而是在持续维护系统不变量。
+
+### 9、第九阶段：OwnerReference
+
+```
+WebApp DELETE
+      ↓
+Deployment DELETE
+Service DELETE
+```
+
+OwnerReference
+Garbage Collector
+Controller
+
+### 10、第十阶段：Status
+
+```
+Spec
+=
+用户声明的 Desired State
+
+Status
+=
+Controller 观察到的 Actual State
+```
+
+### 11、最后
+
+```
+type WebApp struct {
+
+    metav1.TypeMeta
+
+    metav1.ObjectMeta
+
+    Spec WebAppSpec
+
+    Status WebAppStatus
+}
+```
+
+Scheme
+GroupVersion
+TypeMeta
+ObjectMeta
+DeepCopy
+Code Generator
+Typed Client
+Informer
+Lister
+
+### 12、扩展
+
+#### 第一块扩展：自己写一个 Mini Scheduler
+
+Controller 做的是：
+
+> **应该存在什么？**
+
+Scheduler 解决的是：
+
+> **这个 Pod 应该放在哪里？**
+
+```
+CPU / Memory Filter
+        ↓
+NodeSelector
+        ↓
+Taint / Toleration
+        ↓
+Affinity
+        ↓
+Score
+        ↓
+Bind
+```
+
+Scheduling Framework
+
+PreFilter
+Filter
+PostFilter
+PreScore
+Score
+Reserve
+Permit
+PreBind
+Bind
+PostBind
+
+#### 第二块扩展：自己写一个 Mini Kubelet
+
+谁真正把 container 跑起来？
+
+```
+Mini Kubelet
+
+Watch:
+Pod.spec.nodeName == my-node
+
+        ↓
+
+发现新 Pod
+
+        ↓
+
+调用 containerd
+
+        ↓
+
+启动 Container
+
+        ↓
+
+监控 Container
+
+        ↓
+
+更新 Pod Status
+```
+
+#### 第三块扩展：Admission Webhook  ，API Server
+
+```
+Request
+   ↓
+Authentication
+   ↓
+Authorization
+   ↓
+Admission
+   ↓
+Validation
+   ↓
+Conversion
+   ↓
+Storage
+   ↓
+etcd
+```
+
+#### 第四块：Mini Operator，网络、存储和 Linux
+
+```
+Pod
+ ↓
+kubelet
+ ↓
+CRI
+ ↓
+Container Runtime
+ ↓
+CNI
+ ↓
+veth
+ ↓
+network namespace
+ ↓
+route / iptables / eBPF
+```
+
+```
+PVC
+ ↓
+PV
+ ↓
+CSI Controller
+ ↓
+Attach
+ ↓
+CSI Node
+ ↓
+Mount
+ ↓
+Pod
+```
+
+```
+resources:
+  limits:
+    memory: 1Gi
+    cpu: "1"
+```
+
+```
+Kubernetes
+ ↓
+Container Runtime
+ ↓
+runc
+ ↓
+cgroup
+namespace
+mount
+capabilities
+seccomp
+```
 
 
 

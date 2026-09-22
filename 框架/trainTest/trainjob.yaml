@@ -1,0 +1,40 @@
+apiVersion: trainer.kubeflow.org/v1alpha1
+kind: TrainJob
+metadata:
+  name: kubeflow-train-demo
+spec:
+  runtimeRef:
+    name: torch-distributed
+  trainer:
+    numNodes: 1
+    numProcPerNode: 1
+    image: nvidia/cuda:12.6.0-base-ubuntu22.04
+    command:
+      - bash
+      - -lc
+      - |
+        apt-get update -qq
+        apt-get install -y -qq python3 >/dev/null
+        python3 /workspace/train.py
+    resourcesPerNode:
+      requests:
+        cpu: "500m"
+        memory: "1Gi"
+        nvidia.com/gpu: "1"
+      limits:
+        memory: "2Gi"
+        nvidia.com/gpu: "1"
+  podTemplateOverrides:
+    - targetJobs:
+        - name: node
+      spec:
+        containers:
+          - name: node
+            volumeMounts:
+              - name: training-code
+                mountPath: /workspace
+                readOnly: true
+        volumes:
+          - name: training-code
+            configMap:
+              name: kubeflow-train-demo-code

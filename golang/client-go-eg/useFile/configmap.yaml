@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-demo
+  namespace: test1
+  labels:
+    app-controller: "true"
+data:
+  image: nginx:1.27
+  replicas: "1"
