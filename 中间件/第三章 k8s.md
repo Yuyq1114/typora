@@ -27,6 +27,179 @@ k8s作为基础设施 是怎么保证其管理的组件的 可用 正确 性能�
 
 
 
+## 项目中的一些
+
+```
+前端请求
+  -> API Handler
+  -> dnsOperator.CreateDomainMapping()
+  -> Kubernetes API Server
+  -> etcd 持久化 DomainMapping CR
+  -> Informer List/Watch 收到事件
+  -> DeltaFIFO.Add/Update/Delete
+  -> Reflector 从 DeltaFIFO 取出
+  -> Informer Handler
+  -> DNS Controller WorkQueue
+  -> reconcile()
+```
+
+
+
+## 自定义控制器驱动业务资源”的模式
+
+模式一：CRD + Controller，也就是 Operator 模式
+CRD/CR
+  -> Controller
+  -> 其他 Kubernetes 资源或外部系统
+适合：
+
+数据库集群管理
+中间件部署
+DNS 配置管理
+证书申请
+云资源管理
+自动扩缩容
+本项目的 DNS 功能就是这种模式。
+
+模式二：只有 CRD，没有 Controller
+CRD
+  -> API Server/etcd
+CR 只是作为结构化数据保存，其他程序通过 API 主动读取。
+
+适合：
+
+配置存储
+业务元数据保存
+由外部系统定期读取的声明数据
+例如：
+
+创建一个业务配置 CR
+外部服务通过 List/Get 读取它
+这种情况下，CRD 更像一个 Kubernetes 原生配置数据库。
+
+模式三：Controller 监听原生资源，不使用 CRD
+Service/Ingress/Deployment
+  -> Controller
+  -> 修改其他资源或调用外部系统
+Controller 不一定要有 CRD，可以直接监听 Kubernetes 原生资源。
+
+例如：
+
+监听 Service
+  -> 自动配置负载均衡器
+或者：
+
+监听 Ingress
+  -> 更新 Nginx 配置
+这种情况下：
+
+Kubernetes 原生资源 = 输入
+Controller = 业务逻辑
+模式四：Admission Webhook 模式
+客户端请求
+  -> API Server
+  -> Mutating/Validating Webhook
+  -> 接受、拒绝或修改请求
+Webhook 处理的是请求进入 API Server 的过程：
+
+Validating Webhook：校验请求，可以拒绝
+Mutating Webhook：修改请求内容
+不一定需要等待后续的异步调谐
+例如：
+
+创建 Pod
+  -> Webhook 自动注入 sidecar
+它和 Controller 的区别是：
+
+特征	Webhook	Controller
+执行时机
+API 请求过程中
+API 请求完成后
+主要作用
+校验/修改对象
+让实际状态趋向期望状态
+是否异步
+通常同步
+通常异步
+是否修改其他资源
+一般不负责
+经常负责
+Webhook 也通常不是 Kubernetes 核心控制面的一部分，而是被 API Server 调用的扩展服务。
+
+模式五：定时任务/轮询模式
+定时任务
+  -> 查询配置
+  -> 执行操作
+例如：
+
+每5分钟查询 DomainMapping
+  -> 重新生成 CoreDNS 配置
+它不依赖 Informer，也没有实时事件通知。
+
+优点：
+
+实现简单
+对事件丢失不敏感
+缺点：
+
+有延迟
+重复执行
+API Server 负载可能较高
+失败恢复粒度较粗
+本项目使用 Informer + WorkQueue，比简单轮询更及时、更节省资源。
+
+模式六：业务服务直接调用 Kubernetes API
+HTTP API
+  -> 业务服务
+  -> Kubernetes API
+  -> 创建/更新资源
+这种模式只做同步 CRUD，不一定有后续 Controller。
+
+例如：
+
+用户点“创建域名映射”
+  -> 服务直接创建 ConfigMap
+这种方式实现简单，但业务服务需要自己处理：
+
+重试
+状态收敛
+外部修改
+配置漂移
+资源重建
+异步失败
+本项目实际上是两种模式组合：
+
+同步 API 服务：
+  用户请求 -> 创建 DomainMapping CR
+异步 Controller：
+  DomainMapping CR -> CoreDNS ConfigMap
+5. 本项目属于哪种组合
+
+
+
+## 高可用
+
+1要不要保证“成功返回的写入不会丢” 这是最重要的分界。
+
+2网络断开时，优先保证哪一边
+
+3数据规模和访问方式不同
+
+### 常见方案
+
+| 方案                               | 组件例子                   | 一个节点坏了以后                             | 主要取舍                                               |
+| ---------------------------------- | -------------------------- | -------------------------------------------- | ------------------------------------------------------ |
+| **主从复制，自动切主**             | PostgreSQL、Redis Sentinel | 从节点提升为新主                             | 结构直观；异步复制可能丢失尚未传到从节点的写入         |
+| **主节点 + 多数派提交**            | etcd、MongoDB 的多数派写入 | 剩余节点能形成多数派时选主并继续写           | 已确认写入的保证更强；失去多数派就暂停写入             |
+| **无固定主节点，按请求选择确认数** | Cassandra                  | 请求可交给不同节点协调，按一致性级别等待副本 | 写入可用性和读到最新数据的保证可按操作调整             |
+| **多个地区都能写**                 | DynamoDB Global Tables     | 一个地区故障后，其他地区仍接受写入           | 就近写入、跨地区容灾；异步模式需要处理并发写冲突       |
+| **按数据分区，每个分区各有主节点** | Kafka、CockroachDB         | 受影响的分区分别选新主                       | 数据量和吞吐量可横向扩展；每个分区仍需自己的故障处理   |
+| **副本或纠删码保存数据**           | Ceph                       | 从其他副本或数据块恢复                       | 重点是磁盘容量和数据耐久性；还需要额外机制管理集群状态 |
+
+
+
+
+
 ## 实现过程
 
 ### 1、第一版做一个 **ConfigMap Controller**：
