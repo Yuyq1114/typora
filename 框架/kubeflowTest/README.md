@@ -1,5 +1,9 @@
 # Kubeflow Trainer 开发工作流
 
+https://www.kubeflow.org/docs/started/architecture/
+
+![img.png](img.png)
+
 这个项目不讲模型原理，而是用同一份训练代码逐层理解 Kubeflow Trainer：
 
 ```text
@@ -11,7 +15,7 @@ Kubeflow TrainJob
   ↓
 自定义 TrainingRuntime
   ↓
-Go/client-go 提交 TrainJob
+Go/client-go 提交 TrainJob[]()
 ```
 
 当前项目学习的是“训练任务开发工作流”，不是 Kubeflow Pipelines。

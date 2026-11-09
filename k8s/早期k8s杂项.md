@@ -1,14 +1,8 @@
-![](images\k8s_architecture.png)
-
-
-
 https://kubernetes.io/zh-cn/docs/tutorials/kubernetes-basics/
 
 https://kubernetes.io/zh-cn/docs/concepts/
 
 https://kubernetes.io/docs/concepts/overview/
-
-
 
 ## 思考和学习路径
 
